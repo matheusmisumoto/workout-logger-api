@@ -22,6 +22,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import dev.matheusmisumoto.workoutloggerapi.dto.ExerciseRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
+import dev.matheusmisumoto.workoutloggerapi.model.ExerciseEquipmentType;
+import dev.matheusmisumoto.workoutloggerapi.model.ExerciseTargetType;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
 import jakarta.validation.Valid;
 
@@ -35,6 +37,8 @@ public class ExerciseController {
 	@PostMapping
 	public ResponseEntity<Exercise> saveExercise(@RequestBody @Valid ExerciseRecordDTO exerciseRecordDTO) {
 		var exercise = new Exercise();
+		exercise.setTarget(ExerciseTargetType.valueOfDescription(exerciseRecordDTO.target()));
+		exercise.setEquipment(ExerciseEquipmentType.valueOfDescription(exerciseRecordDTO.equipment()));
 		BeanUtils.copyProperties(exerciseRecordDTO, exercise);
 		return ResponseEntity.status(HttpStatus.CREATED).body(exerciseRepository.save(exercise));
 	}
@@ -69,6 +73,8 @@ public class ExerciseController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
 		}
 		var getExerciseData = exercise.get();
+		getExerciseData.setTarget(ExerciseTargetType.valueOfDescription(exerciseRecordDTO.target()));
+		getExerciseData.setEquipment(ExerciseEquipmentType.valueOfDescription(exerciseRecordDTO.equipment()));
 		BeanUtils.copyProperties(exerciseRecordDTO, getExerciseData);
 		return ResponseEntity.status(HttpStatus.OK).body(exerciseRepository.save(getExerciseData));
 	}

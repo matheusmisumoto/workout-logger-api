@@ -6,6 +6,8 @@ import java.util.UUID;
 import org.springframework.hateoas.RepresentationModel;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,9 +24,12 @@ public class Exercise extends RepresentationModel<Exercise> implements Serializa
 	private UUID id;
 	
 	private String name;
-	private String target;
-	private String equipment;
 	
+	@Enumerated(EnumType.STRING)
+	private ExerciseTargetType target;
+	
+	@Enumerated(EnumType.STRING)
+	private ExerciseEquipmentType equipment;
 	
 	public UUID getId() {
 		return id;
@@ -39,19 +44,16 @@ public class Exercise extends RepresentationModel<Exercise> implements Serializa
 		this.name = name;
 	}
 	public String getTarget() {
-		return target;
+		return target.getDescription();
 	}
-	public void setTarget(String target) {
+	public void setTarget(ExerciseTargetType target) {
 		this.target = target;
 	}
 	public String getEquipment() {
-		return equipment;
+		return equipment.getDescription();
 	}
-	public void setEquipment(String equipment) {
+	public void setEquipment(ExerciseEquipmentType equipment) {
 		this.equipment = equipment;
-	}
-	public static long getSerialversionuid() {
-		return serialVersionUID;
 	}
 
 }

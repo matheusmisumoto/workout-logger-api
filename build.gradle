@@ -6,6 +6,7 @@ plugins {
 
 group = 'dev.matheusmisumoto'
 version = '0.0.1-SNAPSHOT'
+compileJava.options.encoding = 'UTF-8'
 
 java {
 	sourceCompatibility = '17'
