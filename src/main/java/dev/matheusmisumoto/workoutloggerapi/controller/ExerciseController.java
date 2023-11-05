@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
@@ -88,5 +92,54 @@ public class ExerciseController {
 		exerciseRepository.delete(exercise.get());
 		return ResponseEntity.status(HttpStatus.OK).body("Exercise deleted");
 	}
+	
+	@GetMapping("/muscle")
+	public ResponseEntity<Object> getMuscles(){
+		ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode json = objectMapper.createObjectNode();
+        
+        for (Enum<?> constant : ExerciseTargetType.values()) {
+            json.put(constant.name(), ((ExerciseTargetType) constant).getDescription());
+        }
+        
+        return ResponseEntity.status(HttpStatus.OK).body(json);
+	}
+	
+	@GetMapping("/muscle/{muscle}")
+	public ResponseEntity<Object> getExercisesByMuscle(@PathVariable(value="muscle") String target){
+		target = target.replace("-", " ");
+		List<Exercise> exerciseList = exerciseRepository.findByTarget(ExerciseTargetType.valueOfDescription(target));
+		if(!exerciseList.isEmpty()) {
+			for(Exercise exercise : exerciseList) {
+				UUID id = exercise.getId();
+				exercise.add(linkTo(methodOn(ExerciseController.class).getExercise(id)).withSelfRel());
+			}
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(exerciseList);
+	}
+	
+	@GetMapping("/equipment")
+	public ResponseEntity<Object> getEquipments(){
+		ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode json = objectMapper.createObjectNode();
+        
+        for (Enum<?> constant : ExerciseEquipmentType.values()) {
+            json.put(constant.name(), ((ExerciseEquipmentType) constant).getDescription());
+        }
+        
+        return ResponseEntity.status(HttpStatus.OK).body(json);
+	}
 
+	@GetMapping("/equipment/{equipment}")
+	public ResponseEntity<Object> getExercisesByEquipment(@PathVariable(value="equipment") String equipment){
+		equipment = equipment.replace("-", " ");
+		List<Exercise> exerciseList = exerciseRepository.findByEquipment(ExerciseEquipmentType.valueOfDescription(equipment));
+		if(!exerciseList.isEmpty()) {
+			for(Exercise exercise : exerciseList) {
+				UUID id = exercise.getId();
+				exercise.add(linkTo(methodOn(ExerciseController.class).getExercise(id)).withSelfRel());
+			}
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(exerciseList);
+	}
 }
