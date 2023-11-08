@@ -3,9 +3,9 @@ package dev.matheusmisumoto.workoutloggerapi.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import dev.matheusmisumoto.workoutloggerapi.constants.ExerciseEquipmentType;
+import dev.matheusmisumoto.workoutloggerapi.constants.ExerciseTargetType;
 import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
-import dev.matheusmisumoto.workoutloggerapi.model.ExerciseEquipmentType;
-import dev.matheusmisumoto.workoutloggerapi.model.ExerciseTargetType;
 
 import java.util.List;
 import java.util.UUID;

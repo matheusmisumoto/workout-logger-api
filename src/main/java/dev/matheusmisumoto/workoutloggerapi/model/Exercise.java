@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import org.springframework.hateoas.RepresentationModel;
 
+import dev.matheusmisumoto.workoutloggerapi.constants.ExerciseEquipmentType;
+import dev.matheusmisumoto.workoutloggerapi.constants.ExerciseTargetType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

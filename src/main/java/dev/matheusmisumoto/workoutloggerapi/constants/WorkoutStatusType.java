@@ -1,4 +1,4 @@
-package dev.matheusmisumoto.workoutloggerapi.model;
+package dev.matheusmisumoto.workoutloggerapi.constants;
 
 public enum WorkoutStatusType {
 	IN_PROGRESS, COMPLETED;

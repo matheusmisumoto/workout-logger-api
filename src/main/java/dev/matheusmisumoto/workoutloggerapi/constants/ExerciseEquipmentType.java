@@ -1,4 +1,4 @@
-package dev.matheusmisumoto.workoutloggerapi.model;
+package dev.matheusmisumoto.workoutloggerapi.constants;
 
 public enum ExerciseEquipmentType {
 	BANDS("Bands"),

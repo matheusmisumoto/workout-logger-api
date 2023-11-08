@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
-import dev.matheusmisumoto.workoutloggerapi.model.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutRepository;
 
 @RestController
