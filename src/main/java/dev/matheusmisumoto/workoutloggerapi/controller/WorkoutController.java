@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +20,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutSetType;
 import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutStatusType;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseRecordDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetRecordDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
+import dev.matheusmisumoto.workoutloggerapi.model.WorkoutSet;
+import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutRepository;
+import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutSetRepository;
 
 @RestController
 @RequestMapping("/v1/workout")
@@ -31,13 +41,40 @@ public class WorkoutController {
 	@Autowired
 	WorkoutRepository workoutRepository;
 	
+	@Autowired
+	ExerciseRepository exerciseRepository;
+	
+	@Autowired
+	WorkoutSetRepository workoutSetRepository;
+	
 	@PostMapping
-	public ResponseEntity<Workout> saveWorkout(@RequestBody WorkoutRecordDTO workoutRecordDTO) {
+	public ResponseEntity<Object> saveWorkout(@RequestBody WorkoutRecordDTO workoutRecordDTO) {
 		var workout = new Workout();
 		workout.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		workout.setDate(LocalDateTime.now(Clock.systemUTC()));
-		BeanUtils.copyProperties(workoutRecordDTO, workout);;
-		return ResponseEntity.status(HttpStatus.CREATED).body(workoutRepository.save(workout));
+		BeanUtils.copyProperties(workoutRecordDTO, workout);
+		var workoutMetadata = workoutRepository.save(workout);
+		
+		if(!workoutRecordDTO.exercises().isEmpty()) {
+			int exerciseIndex = 1;
+			for (WorkoutExerciseRecordDTO exercise : workoutRecordDTO.exercises()) {
+				var exerciseId = exerciseRepository.findById(exercise.id()).get();
+				int setIndex = 1;
+				for (WorkoutSetRecordDTO set : exercise.sets()) {
+					var workoutSet = new WorkoutSet();
+					workoutSet.setWorkout(workoutMetadata);
+					workoutSet.setExercise(exerciseId);
+					workoutSet.setExerciseOrder(exerciseIndex);
+					workoutSet.setSetOrder(setIndex++);
+					workoutSet.setType(WorkoutSetType.valueOfDescription(set.type()));
+					BeanUtils.copyProperties(set, workoutSet);
+					workoutSetRepository.save(workoutSet);
+				}
+				exerciseIndex++;
+			}		
+		}
+		
+		return ResponseEntity.status(HttpStatus.CREATED).body(workoutMetadata);
 	}
 	
 	@GetMapping
@@ -51,7 +88,46 @@ public class WorkoutController {
 		if(workout.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(workout);
+		
+		var workoutData = workout.get();
+		var exercisesData = workoutSetRepository.findExercisesFromWorkout(workoutData);
+		
+		List<WorkoutExerciseShowDTO> exercises = exercisesData.stream()
+				.map(exercise -> {
+					var setsData = workoutSetRepository.findByWorkoutAndExerciseOrderBySetOrderAsc(workout.get(), exercise);
+					List<WorkoutSetShowDTO> sets = setsData.stream()
+							.map(set -> {
+								WorkoutSetShowDTO setDTO = new WorkoutSetShowDTO(
+										set.getType(),
+										set.getWeight(),
+										set.getReps()
+										);
+								return setDTO;
+							}).collect(Collectors.toList());
+					
+					WorkoutExerciseShowDTO exerciseDTO = new WorkoutExerciseShowDTO(
+							exercise.getId(),
+							exercise.getName(),
+							exercise.getTarget(),
+							exercise.getEquipment(),
+							sets
+							);
+					return exerciseDTO;
+					}
+				).collect(Collectors.toList());;
+		
+		
+		WorkoutShowDTO response = new WorkoutShowDTO(
+					workoutData.getId(),
+					workoutData.getDate(),
+					workoutData.getName(),
+					workoutData.getComment(),
+					workoutData.getDuration(),
+					workoutData.getStatus(),
+					exercises
+				);
+
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 	
 	@PutMapping("/{id}")

@@ -2,17 +2,20 @@ package dev.matheusmisumoto.workoutloggerapi.model;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutStatusType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -33,6 +36,9 @@ public class Workout implements Serializable {
 	
 	@Enumerated(EnumType.STRING)
 	private WorkoutStatusType status;
+	
+	@OneToMany(mappedBy="workout", cascade=CascadeType.ALL, orphanRemoval=true)
+	private List<WorkoutSet> sets;
 	
 	public UUID getId() {
 		return id;
@@ -69,9 +75,7 @@ public class Workout implements Serializable {
 	}
 	public void setStatus(WorkoutStatusType status) {
 		this.status = status;
-	}
-	
-	
+	}	
 		
 
 }
