@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
 import dev.matheusmisumoto.workoutloggerapi.model.WorkoutSet;
+import jakarta.transaction.Transactional;
 
 @Repository
 public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
@@ -19,5 +20,8 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
 	List<Exercise> findExercisesFromWorkout(Workout workout);
 	
 	List<WorkoutSet> findByWorkoutAndExerciseOrderBySetOrderAsc(Workout workout, Exercise exercise);
+	
+	@Transactional
+	void deleteByWorkout(Workout workout);
 
 }

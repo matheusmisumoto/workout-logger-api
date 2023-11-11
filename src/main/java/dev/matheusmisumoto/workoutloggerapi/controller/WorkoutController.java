@@ -20,19 +20,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutSetType;
-import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutStatusType;
-import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
-import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
-import dev.matheusmisumoto.workoutloggerapi.model.WorkoutSet;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutSetRepository;
+import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
+import dev.matheusmisumoto.workoutloggerapi.util.WorkoutUtil;
 
 @RestController
 @RequestMapping("/v1/workout")
@@ -49,31 +46,16 @@ public class WorkoutController {
 	
 	@PostMapping
 	public ResponseEntity<Object> saveWorkout(@RequestBody WorkoutRecordDTO workoutRecordDTO) {
+		// Save metadata
 		var workout = new Workout();
 		workout.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		workout.setDate(LocalDateTime.now(Clock.systemUTC()));
 		BeanUtils.copyProperties(workoutRecordDTO, workout);
 		var workoutMetadata = workoutRepository.save(workout);
 		
-		if(!workoutRecordDTO.exercises().isEmpty()) {
-			int exerciseIndex = 1;
-			for (WorkoutExerciseRecordDTO exercise : workoutRecordDTO.exercises()) {
-				var exerciseId = exerciseRepository.findById(exercise.id()).get();
-				int setIndex = 1;
-				for (WorkoutSetRecordDTO set : exercise.sets()) {
-					var workoutSet = new WorkoutSet();
-					workoutSet.setWorkout(workoutMetadata);
-					workoutSet.setExercise(exerciseId);
-					workoutSet.setExerciseOrder(exerciseIndex);
-					workoutSet.setSetOrder(setIndex++);
-					workoutSet.setType(WorkoutSetType.valueOfDescription(set.type()));
-					BeanUtils.copyProperties(set, workoutSet);
-					workoutSetRepository.save(workoutSet);
-				}
-				exerciseIndex++;
-			}		
-		}
-		
+		var sets = new WorkoutUtil();
+		sets.recordSets(exerciseRepository, workoutSetRepository, workoutMetadata, workoutRecordDTO);
+				
 		return ResponseEntity.status(HttpStatus.CREATED).body(workoutMetadata);
 	}
 	
@@ -89,9 +71,14 @@ public class WorkoutController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
 		
+		// Get the training metadata
 		var workoutData = workout.get();
+		
+		// Get the list of exercises done, already considering the order
 		var exercisesData = workoutSetRepository.findExercisesFromWorkout(workoutData);
 		
+		// From that, get the details of the exercise, and the sets data considering the order
+		// Attach the list of sets on the exercise 
 		List<WorkoutExerciseShowDTO> exercises = exercisesData.stream()
 				.map(exercise -> {
 					var setsData = workoutSetRepository.findByWorkoutAndExerciseOrderBySetOrderAsc(workout.get(), exercise);
@@ -116,7 +103,7 @@ public class WorkoutController {
 					}
 				).collect(Collectors.toList());;
 		
-		
+		// Attach the list of exercises on the workout that will be returned as JSON
 		WorkoutShowDTO response = new WorkoutShowDTO(
 					workoutData.getId(),
 					workoutData.getDate(),
@@ -137,9 +124,19 @@ public class WorkoutController {
 		if(workout.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
+		
+		// Prepare metadata to be updated
 		var workoutData = workout.get();
 		workoutData.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		BeanUtils.copyProperties(workoutRecordDTO, workoutData);
+		
+		// It would take unnecessary steps of code to compare the list of recorded sets
+		// with the updated ones (changes, inserts and deletions).
+		// So we delete all recorded sets of the training, and insert the updated ones
+		workoutSetRepository.deleteByWorkout(workoutData);
+		var sets = new WorkoutUtil();
+		sets.recordSets(exerciseRepository, workoutSetRepository, workoutData, workoutRecordDTO);
+		
 		return ResponseEntity.status(HttpStatus.OK).body(workoutRepository.save(workoutData));		
 	}
 	

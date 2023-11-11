@@ -3,7 +3,7 @@ package dev.matheusmisumoto.workoutloggerapi.model;
 import java.io.Serializable;
 import java.util.UUID;
 
-import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutSetType;
+import dev.matheusmisumoto.workoutloggerapi.type.WorkoutSetType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

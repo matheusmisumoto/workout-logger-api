@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutStatusType;
+import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

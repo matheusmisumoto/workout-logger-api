@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import dev.matheusmisumoto.workoutloggerapi.constants.WorkoutStatusType;
+import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 
 public record WorkoutShowDTO(UUID id, 
 							 LocalDateTime date, 

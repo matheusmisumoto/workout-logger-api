@@ -1,4 +1,4 @@
-package dev.matheusmisumoto.workoutloggerapi.constants;
+package dev.matheusmisumoto.workoutloggerapi.type;
 
 public enum WorkoutSetType {
 	STANDARD,

@@ -23,11 +23,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
-import dev.matheusmisumoto.workoutloggerapi.constants.ExerciseEquipmentType;
-import dev.matheusmisumoto.workoutloggerapi.constants.ExerciseTargetType;
 import dev.matheusmisumoto.workoutloggerapi.dto.ExerciseRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
+import dev.matheusmisumoto.workoutloggerapi.type.ExerciseEquipmentType;
+import dev.matheusmisumoto.workoutloggerapi.type.ExerciseTargetType;
 import jakarta.validation.Valid;
 
 @RestController
