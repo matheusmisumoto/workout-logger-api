@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +19,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
-import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
-import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
+import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
+import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutSetRepository;
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
@@ -44,12 +42,16 @@ public class WorkoutController {
 	@Autowired
 	WorkoutSetRepository workoutSetRepository;
 	
+	@Autowired
+	UserRepository userRepository;
+	
 	@PostMapping
 	public ResponseEntity<Object> saveWorkout(@RequestBody WorkoutRecordDTO workoutRecordDTO) {
 		// Save metadata
 		var workout = new Workout();
 		workout.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		workout.setDate(LocalDateTime.now(Clock.systemUTC()));
+		workout.setUser(userRepository.findById(workoutRecordDTO.user()).get());
 		BeanUtils.copyProperties(workoutRecordDTO, workout);
 		var workoutMetadata = workoutRepository.save(workout);
 		
@@ -64,6 +66,16 @@ public class WorkoutController {
 		return ResponseEntity.status(HttpStatus.OK).body(workoutRepository.findAll());
 	}
 	
+	@GetMapping("/user/{id}")
+	public ResponseEntity<Object> allUserWorkouts(@PathVariable(value="id") UUID id) {
+		Optional<User> user = userRepository.findById(id);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(workoutRepository.findAllByUser(user.get()));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<Object> getWorkout(@PathVariable(value="id") UUID id) {
 		Optional<Workout> workout = workoutRepository.findById(id);
@@ -71,51 +83,28 @@ public class WorkoutController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
 		
-		// Get the training metadata
-		var workoutData = workout.get();
-		
-		// Get the list of exercises done, already considering the order
-		var exercisesData = workoutSetRepository.findExercisesFromWorkout(workoutData);
-		
-		// From that, get the details of the exercise, and the sets data considering the order
-		// Attach the list of sets on the exercise 
-		List<WorkoutExerciseShowDTO> exercises = exercisesData.stream()
-				.map(exercise -> {
-					var setsData = workoutSetRepository.findByWorkoutAndExerciseOrderBySetOrderAsc(workout.get(), exercise);
-					List<WorkoutSetShowDTO> sets = setsData.stream()
-							.map(set -> {
-								WorkoutSetShowDTO setDTO = new WorkoutSetShowDTO(
-										set.getType(),
-										set.getWeight(),
-										set.getReps()
-										);
-								return setDTO;
-							}).collect(Collectors.toList());
-					
-					WorkoutExerciseShowDTO exerciseDTO = new WorkoutExerciseShowDTO(
-							exercise.getId(),
-							exercise.getName(),
-							exercise.getTarget(),
-							exercise.getEquipment(),
-							sets
-							);
-					return exerciseDTO;
-					}
-				).collect(Collectors.toList());;
-		
-		// Attach the list of exercises on the workout that will be returned as JSON
-		WorkoutShowDTO response = new WorkoutShowDTO(
-					workoutData.getId(),
-					workoutData.getDate(),
-					workoutData.getName(),
-					workoutData.getComment(),
-					workoutData.getDuration(),
-					workoutData.getStatus(),
-					exercises
-				);
+		var response = new WorkoutUtil();
 
-		return ResponseEntity.status(HttpStatus.OK).body(response);
+		return ResponseEntity.status(HttpStatus.OK).body(response.buildWorkoutJSON(workout, workoutSetRepository));
 	}
+
+	@GetMapping("/{userid}/{id}")
+	public ResponseEntity<Object> getWorkout(@PathVariable(value="userid") UUID userid,
+											 @PathVariable(value="id") UUID id) {
+		Optional<User> user = userRepository.findById(userid);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+		Optional<Workout> workout = workoutRepository.findByIdAndUser(id, user.get());
+		if(workout.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
+		}
+		
+		var response = new WorkoutUtil();
+
+		return ResponseEntity.status(HttpStatus.OK).body(response.buildWorkoutJSON(workout, workoutSetRepository));
+	}
+
 	
 	@PutMapping("/{id}")
 	public ResponseEntity<Object> updateWorkout(@PathVariable(value="id") UUID id,

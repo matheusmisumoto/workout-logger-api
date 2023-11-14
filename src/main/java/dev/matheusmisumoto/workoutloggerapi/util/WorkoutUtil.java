@@ -1,10 +1,17 @@
 package dev.matheusmisumoto.workoutloggerapi.util;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.BeanUtils;
 
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseRecordDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetRecordDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
 import dev.matheusmisumoto.workoutloggerapi.model.WorkoutSet;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
@@ -38,6 +45,52 @@ public class WorkoutUtil {
 				exerciseIndex++;
 			}		
 		}
+	}
+	
+	public WorkoutShowDTO buildWorkoutJSON(Optional<Workout> workout, WorkoutSetRepository workoutSetRepository) {
+		// Get the training metadata
+		var workoutData = workout.get();
+					
+		// Get the list of exercises done, already considering the order
+		var exercisesData = workoutSetRepository.findExercisesFromWorkout(workoutData);
+				
+		// From that, get the details of the exercise, and the sets data considering the order
+		// Attach the list of sets on the exercise 
+		List<WorkoutExerciseShowDTO> exercises = exercisesData.stream()
+				.map(exercise -> {
+					var setsData = workoutSetRepository.findByWorkoutAndExerciseOrderBySetOrderAsc(workout.get(), exercise);
+					List<WorkoutSetShowDTO> sets = setsData.stream()
+							.map(set -> {
+								WorkoutSetShowDTO setDTO = new WorkoutSetShowDTO(
+										set.getType(),
+										set.getWeight(),
+										set.getReps()
+										);
+								return setDTO;
+							}).collect(Collectors.toList());
+			
+					WorkoutExerciseShowDTO exerciseDTO = new WorkoutExerciseShowDTO(
+							exercise.getId(),
+							exercise.getName(),
+							exercise.getTarget(),
+							exercise.getEquipment(),
+							sets
+							);
+					return exerciseDTO;
+					}
+				).collect(Collectors.toList());;
+		
+		// Attach the list of exercises on the workout that will be returned as JSON
+		return new WorkoutShowDTO(
+					workoutData.getId(),
+					workoutData.getUser().getId(),
+					workoutData.getDate(),
+					workoutData.getName(),
+					workoutData.getComment(),
+					workoutData.getDuration(),
+					workoutData.getStatus(),
+				exercises
+				);
 	}
 
 }
