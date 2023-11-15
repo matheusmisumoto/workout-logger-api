@@ -24,7 +24,7 @@ public class User implements Serializable {
 	
 	private String name;
 	private String login;
-	private String oauthId;
+	private int oauthId;
 	private String avatarUrl;
 	
 	@OneToMany(mappedBy="user", cascade=CascadeType.ALL, orphanRemoval=true)
@@ -54,11 +54,11 @@ public class User implements Serializable {
 		this.login = login;
 	}
 
-	public String getOauthId() {
+	public int getOauthId() {
 		return oauthId;
 	}
 
-	public void setOauthId(String oauthId) {
+	public void setOauthId(int oauthId) {
 		this.oauthId = oauthId;
 	}
 

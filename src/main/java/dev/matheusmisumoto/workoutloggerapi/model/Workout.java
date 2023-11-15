@@ -23,7 +23,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name="workout")
+@Table(name="workouts")
 public class Workout implements Serializable {
 	
 	private static final long serialVersionUID = 1L;

@@ -1,0 +1,17 @@
+{"properties": [
+  {
+    "name": "api.secret.token.secret",
+    "type": "java.lang.String",
+    "description": "Secret to generate tokens"
+  },
+  {
+    "name": "github.client-id",
+    "type": "java.lang.String",
+    "description": "GitHub OAuth App Client ID"
+  },
+  {
+    "name": "github.client-secret",
+    "type": "java.lang.String",
+    "description": "GitHub OAuth App Client Secret"
+  }
+]}

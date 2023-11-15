@@ -10,6 +10,6 @@ import dev.matheusmisumoto.workoutloggerapi.model.User;
 public interface UserRepository extends JpaRepository<User, UUID> {
 	
 	Optional<User> findByName(String name);
+	Optional<User> findByOauthId(int oauthId);
 	
-
 }

@@ -16,8 +16,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.matheusmisumoto.workoutloggerapi.dto.OAuthCodeDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.TokenDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
+import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
+import dev.matheusmisumoto.workoutloggerapi.util.OAuthUtil;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/v1/user")
@@ -26,9 +31,34 @@ public class UserController {
 	@Autowired
 	UserRepository userRepository;
 	
-	@PostMapping
-	public ResponseEntity<User> addUser(@RequestBody User user) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(userRepository.save(user));
+	@Autowired
+	JWTService jwtService;
+	
+	@Autowired
+	OAuthUtil oAuthUtil;
+
+	@PostMapping("/oauth")
+	public ResponseEntity<TokenDTO> oAuthLogin(@RequestBody @Valid OAuthCodeDTO codeDTO) {
+		
+		var oAuthUser = oAuthUtil.getOAuthData(codeDTO);
+
+		var oauthUserId = oAuthUser.id();
+		Optional<User> checkUser = userRepository.findByOauthId(oauthUserId);
+		
+		if(checkUser.isEmpty()) {
+			var newUser = new User();
+			newUser.setOauthId(oAuthUser.id());
+			newUser.setName(oAuthUser.name());
+			newUser.setAvatarUrl(oAuthUser.avatar_url());
+			userRepository.save(newUser);
+			checkUser = userRepository.findByOauthId(oauthUserId);
+		}
+		
+		
+		var token = jwtService.generateToken(checkUser.get());
+		var response = new TokenDTO(token);
+
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 	
 	@GetMapping

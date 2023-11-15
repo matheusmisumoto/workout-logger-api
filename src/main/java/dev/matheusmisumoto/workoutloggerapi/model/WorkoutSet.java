@@ -18,7 +18,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 @Entity
-@Table(name = "workout_set")
+@Table(name = "workouts_sets")
 public class WorkoutSet implements Serializable {
 
 	private static final long serialVersionUID = 1L;
