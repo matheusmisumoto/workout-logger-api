@@ -53,6 +53,7 @@ public class WorkoutUtil {
 					
 		// Get the list of exercises done, already considering the order
 		var exercisesData = workoutSetRepository.findExercisesFromWorkout(workoutData);
+		var totalLifted = workoutSetRepository.calculateTotalWeightLifted(workoutData);
 				
 		// From that, get the details of the exercise, and the sets data considering the order
 		// Attach the list of sets on the exercise 
@@ -88,6 +89,7 @@ public class WorkoutUtil {
 					workoutData.getName(),
 					workoutData.getComment(),
 					workoutData.getDuration(),
+					totalLifted,
 					workoutData.getStatus(),
 				exercises
 				);

@@ -12,6 +12,7 @@ public record WorkoutShowDTO(UUID id,
 							 String name, 
 							 String comment, 
 							 int duration, 
+							 int totalLifted,
 							 WorkoutStatusType status,
 							 List<WorkoutExerciseShowDTO> exercises) {
 

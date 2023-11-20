@@ -16,10 +16,13 @@ import jakarta.transaction.Transactional;
 @Repository
 public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
 	
-	@Query("SELECT DISTINCT s.exercise from WorkoutSet s WHERE s.workout=?1 ORDER BY s.exerciseOrder ASC")
+	@Query("SELECT DISTINCT s.exercise FROM WorkoutSet s WHERE s.workout=?1 ORDER BY s.exerciseOrder ASC")
 	List<Exercise> findExercisesFromWorkout(Workout workout);
 	
 	List<WorkoutSet> findByWorkoutAndExerciseOrderBySetOrderAsc(Workout workout, Exercise exercise);
+	
+	@Query("SELECT SUM(s.weight * s.reps) FROM WorkoutSet s WHERE s.workout=?1")
+	int calculateTotalWeightLifted(Workout workout);
 	
 	@Transactional
 	void deleteByWorkout(Workout workout);

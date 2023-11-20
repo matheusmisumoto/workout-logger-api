@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.matheusmisumoto.workoutloggerapi.dto.OAuthCodeDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.TokenDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.UserShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
@@ -64,6 +65,25 @@ public class UserController {
 	@GetMapping
 	public ResponseEntity<List<User>> getAllUsers(){
 		return ResponseEntity.status(HttpStatus.OK).body(userRepository.findAll());
+	}
+	
+	@GetMapping("/{id}")
+	public ResponseEntity<Object> getUser(@PathVariable(value="id") UUID id){
+		Optional<User> user = userRepository.findById(id);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+		var userData = user.get();
+		var totalLifted = userRepository.calculateUserTotalWeightLifted(userData.getId());
+		var totalWorkouts = userRepository.totalWorkouts(userData.getId());
+		var response = new UserShowDTO(userData.getId(),
+									   userData.getName(),
+									   userData.getLogin(),
+									   userData.getOauthId(),
+									   userData.getAvatarUrl(),
+									   totalWorkouts,
+									   totalLifted);
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 	
 	@PutMapping("/{id}")
