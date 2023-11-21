@@ -44,7 +44,7 @@ public class JWTService {
 					.verify(token)
 					.getSubject();
 		} catch (JWTCreationException exception) {
-			return "";
+			throw new RuntimeException("Error while validating token", exception);
 		}
 	}
 

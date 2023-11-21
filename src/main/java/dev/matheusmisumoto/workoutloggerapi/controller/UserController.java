@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,6 +57,8 @@ public class UserController {
 			checkUser = userRepository.findByOauthId(oauthUserId);
 		}
 		
+		var auth = new UsernamePasswordAuthenticationToken(checkUser.get().getId().toString(), null);
+		SecurityContextHolder.getContext().setAuthentication(auth);
 		
 		var token = jwtService.generateToken(checkUser.get());
 		var response = new TokenDTO(token);
