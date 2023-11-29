@@ -11,6 +11,7 @@ import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShortShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
 import dev.matheusmisumoto.workoutloggerapi.model.WorkoutSet;
@@ -54,6 +55,10 @@ public class WorkoutUtil {
 		// Get the list of exercises done, already considering the order
 		var exercisesData = workoutSetRepository.findExercisesFromWorkout(workoutData);
 		var totalLifted = workoutSetRepository.calculateTotalWeightLifted(workoutData);
+		var totalLiftedRounded = 0;
+		if(totalLifted != null) { 
+			totalLiftedRounded = (int) Math.round(totalLifted);
+		}
 				
 		// From that, get the details of the exercise, and the sets data considering the order
 		// Attach the list of sets on the exercise 
@@ -89,10 +94,32 @@ public class WorkoutUtil {
 					workoutData.getName(),
 					workoutData.getComment(),
 					workoutData.getDuration(),
-					totalLifted,
+					totalLiftedRounded,
 					workoutData.getStatus(),
-				exercises
+					exercises
 				);
 	}
-
+	
+	public WorkoutShortShowDTO buildWorkoutCardJSON(Workout workout, WorkoutSetRepository workoutSetRepository) {
+					
+		// Get the total of exercises and weight lifted
+		var totalLifted = workoutSetRepository.calculateTotalWeightLifted(workout);
+		var totalLiftedRounded = 0;
+		if(totalLifted != null) { 
+			totalLiftedRounded = (int) Math.round(totalLifted);
+		}
+		
+		var totalExercises = workoutSetRepository.calculateTotalExercises(workout);
+							
+		return new WorkoutShortShowDTO(
+					workout.getId(),
+					workout.getUser().getId(),
+					workout.getDate(),
+					workout.getName(),
+					workout.getComment(),
+					workout.getDuration(),
+					totalLiftedRounded,
+					totalExercises
+				);
+	}
 }

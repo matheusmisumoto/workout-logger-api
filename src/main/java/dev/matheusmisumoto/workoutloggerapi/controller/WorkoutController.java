@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,19 +62,22 @@ public class WorkoutController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(workoutMetadata);
 	}
 	
-	@GetMapping
-	public ResponseEntity<List<Workout>> allWorkouts() {
-		return ResponseEntity.status(HttpStatus.OK).body(workoutRepository.findAll());
-	}
-	
 	@GetMapping("/user/{id}")
 	public ResponseEntity<Object> allUserWorkouts(@PathVariable(value="id") UUID id) {
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
 		}
+		
+		var allWorkouts = workoutRepository.findAllByUser(user.get());
+		var responseBuilder = new WorkoutUtil();
 
-		return ResponseEntity.status(HttpStatus.OK).body(workoutRepository.findAllByUser(user.get()));
+		List<Object> response = allWorkouts.stream()
+				.map(workout -> {
+					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
+				}).collect(Collectors.toList());
+
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 
 	@GetMapping("/{id}")

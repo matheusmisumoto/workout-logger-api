@@ -1,7 +1,7 @@
 package dev.matheusmisumoto.workoutloggerapi.type;
 
 public enum WorkoutStatusType {
-	IN_PROGRESS, COMPLETED;
+	TEMPLATE, IN_PROGRESS, COMPLETED;
 	
 	private WorkoutStatusType() {
 	}

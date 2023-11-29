@@ -48,7 +48,7 @@ public class ExerciseController {
 	
 	@GetMapping
 	public ResponseEntity<List<Exercise>> getAllExercises(){
-		List<Exercise> exerciseList = exerciseRepository.findAll();
+		List<Exercise> exerciseList = exerciseRepository.findAllByOrderByNameAsc();
 		if(!exerciseList.isEmpty()) {
 			for(Exercise exercise : exerciseList) {
 				UUID id = exercise.getId();

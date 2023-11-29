@@ -14,6 +14,7 @@ import java.util.UUID;
 public interface ExerciseRepository extends JpaRepository<Exercise, UUID> {
 
 	List<Exercise> findByTarget(ExerciseTargetType target);
+	List<Exercise> findAllByOrderByNameAsc();
 	List<Exercise> findByEquipment(ExerciseEquipmentType equipment);
 
 }
