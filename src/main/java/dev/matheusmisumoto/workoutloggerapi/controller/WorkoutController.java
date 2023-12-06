@@ -69,7 +69,7 @@ public class WorkoutController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
 		}
 		
-		var allWorkouts = workoutRepository.findAllByUser(user.get());
+		var allWorkouts = workoutRepository.findAllByUserOrderByDateDesc(user.get());
 		var responseBuilder = new WorkoutUtil();
 
 		List<Object> response = allWorkouts.stream()
@@ -80,6 +80,24 @@ public class WorkoutController {
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 
+	@GetMapping("/user/{id}/last")
+	public ResponseEntity<Object> latestUserWorkouts(@PathVariable(value="id") UUID id) {
+		Optional<User> user = userRepository.findById(id);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+		
+		var allWorkouts = workoutRepository.findTop10ByUserOrderByDateDesc(user.get());
+		var responseBuilder = new WorkoutUtil();
+
+		List<Object> response = allWorkouts.stream()
+				.map(workout -> {
+					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
+				}).collect(Collectors.toList());
+
+		return ResponseEntity.status(HttpStatus.OK).body(response);
+	}	
+	
 	@GetMapping("/{id}")
 	public ResponseEntity<Object> getWorkout(@PathVariable(value="id") UUID id) {
 		Optional<Workout> workout = workoutRepository.findById(id);

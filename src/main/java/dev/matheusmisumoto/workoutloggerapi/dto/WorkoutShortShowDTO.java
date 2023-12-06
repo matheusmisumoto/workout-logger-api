@@ -1,6 +1,7 @@
 package dev.matheusmisumoto.workoutloggerapi.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record WorkoutShortShowDTO(UUID id, 
@@ -8,7 +9,8 @@ public record WorkoutShortShowDTO(UUID id,
 								  LocalDateTime date, 
 								  String name, 
 								  String comment, 
-								  int duration, 
+								  int duration,
+								  List<String> target,
 								  int totalLifted,
 								  int totalExercises) {
 

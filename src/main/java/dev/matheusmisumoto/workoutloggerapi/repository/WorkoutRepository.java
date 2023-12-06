@@ -14,6 +14,7 @@ import dev.matheusmisumoto.workoutloggerapi.model.Workout;
 public interface WorkoutRepository extends JpaRepository<Workout, UUID> {
 	
 	Optional<Workout> findByIdAndUser(UUID id, User user);
-	List<Workout> findAllByUser(User user);
+	List<Workout> findTop10ByUserOrderByDateDesc(User user);
+	List<Workout> findAllByUserOrderByDateDesc(User user);
 
 }

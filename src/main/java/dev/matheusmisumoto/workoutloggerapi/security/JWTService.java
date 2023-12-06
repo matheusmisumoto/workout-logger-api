@@ -18,11 +18,16 @@ public class JWTService {
 	@Value("${api.secret.token.secret}")
 	private String secret;
 	
+	// Using standards claims described on
+	// https://www.iana.org/assignments/jwt/jwt.xhtml
+	
 	public String generateToken(User user) {
 		try {
 			Algorithm algorithm = Algorithm.HMAC256(secret);
 			String token = JWT.create()
 					.withIssuer("workout-logger")
+					.withClaim("name", user.getName())
+					.withClaim("picture", user.getAvatarUrl())
 					.withSubject(user.getId().toString())
 					.withExpiresAt(
 							LocalDateTime.now().plusWeeks(1).toInstant(ZoneOffset.UTC)

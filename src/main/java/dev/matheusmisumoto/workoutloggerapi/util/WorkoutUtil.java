@@ -110,6 +110,12 @@ public class WorkoutUtil {
 		}
 		
 		var totalExercises = workoutSetRepository.calculateTotalExercises(workout);
+		var getTargetMuscles = workoutSetRepository.listTargetMuscles(workout.getId());
+		List<String> listTargetMuscles = getTargetMuscles.stream()
+											.map(muscle -> {
+												return muscle.getDescription();
+											}).collect(Collectors.toList());
+		
 							
 		return new WorkoutShortShowDTO(
 					workout.getId(),
@@ -118,6 +124,7 @@ public class WorkoutUtil {
 					workout.getName(),
 					workout.getComment(),
 					workout.getDuration(),
+					listTargetMuscles,
 					totalLiftedRounded,
 					totalExercises
 				);
