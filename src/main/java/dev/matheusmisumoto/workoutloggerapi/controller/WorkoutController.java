@@ -20,18 +20,24 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsWorkoutsDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
+import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
 import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutSetRepository;
+import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.util.WorkoutUtil;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/v1/workout")
+@RequestMapping("/v1/workouts")
 public class WorkoutController {
 	
 	@Autowired
@@ -45,6 +51,9 @@ public class WorkoutController {
 	
 	@Autowired
 	UserRepository userRepository;
+	
+	@Autowired
+	JWTService jwtService;
 	
 	@PostMapping
 	public ResponseEntity<Object> saveWorkout(@RequestBody WorkoutRecordDTO workoutRecordDTO) {
@@ -98,19 +107,7 @@ public class WorkoutController {
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}	
 	
-	@GetMapping("/{id}")
-	public ResponseEntity<Object> getWorkout(@PathVariable(value="id") UUID id) {
-		Optional<Workout> workout = workoutRepository.findById(id);
-		if(workout.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
-		}
-		
-		var response = new WorkoutUtil();
-
-		return ResponseEntity.status(HttpStatus.OK).body(response.buildWorkoutJSON(workout, workoutSetRepository));
-	}
-
-	@GetMapping("/{userid}/{id}")
+	@GetMapping("/user/{userid}/{id}")
 	public ResponseEntity<Object> getWorkout(@PathVariable(value="userid") UUID userid,
 											 @PathVariable(value="id") UUID id) {
 		Optional<User> user = userRepository.findById(userid);
@@ -126,12 +123,66 @@ public class WorkoutController {
 
 		return ResponseEntity.status(HttpStatus.OK).body(response.buildWorkoutJSON(workout, workoutSetRepository));
 	}
+	
+	@GetMapping("/user/{userid}/exercise/{exerciseid}")
+	public ResponseEntity<Object> getLastStatsFromExercise(@PathVariable(value="userid") UUID userid,
+														   @PathVariable(value="exerciseid") UUID exerciseid){
+		Optional<User> user = userRepository.findById(userid);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+		Optional<Exercise> exercise = exerciseRepository.findById(exerciseid);
+		if(exercise.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
+		}
+		
+		var getWorkouts = workoutRepository.findLatestWorkoutsWithExercise(userid, exerciseid);
+		
+		List<PreviousStatsWorkoutsDTO> workouts = getWorkouts.stream()
+										.map( workout -> {
+											var getSets = workoutSetRepository.findByWorkoutAndExerciseOrderBySetOrderAsc(workout, exercise.get());
+											
+											List<WorkoutSetShowDTO> sets = getSets.stream().map(set -> {
+												WorkoutSetShowDTO setDTO = new WorkoutSetShowDTO(
+														set.getType(),
+														set.getWeight(),
+														set.getReps()
+														);
+												return setDTO;
+											}).collect(Collectors.toList());
+											
+											PreviousStatsWorkoutsDTO workoutDTO = new PreviousStatsWorkoutsDTO(
+													workout.getDate(),
+													sets												
+											);
+										return workoutDTO;
+										}).collect(Collectors.toList());
+		PreviousStatsDTO response = new PreviousStatsDTO(exerciseid,
+														 exercise.get().getName(),
+														 workouts);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(response);
+	}
 
 	
-	@PutMapping("/{id}")
-	public ResponseEntity<Object> updateWorkout(@PathVariable(value="id") UUID id,
-											   @RequestBody WorkoutRecordDTO workoutRecordDTO){
-		Optional<Workout> workout = workoutRepository.findById(id);
+	@PutMapping("/user/{userid}/{id}")
+	public ResponseEntity<Object> updateWorkout(HttpServletRequest request,
+												@PathVariable(value="userid") UUID userid,
+												@PathVariable(value="id") UUID id,
+											    @RequestBody WorkoutRecordDTO workoutRecordDTO){
+		
+		// Retrieve logged user ID from JWT
+		var token = request.getHeader("Authorization").replace("Bearer ", "");
+		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
+		
+		// Unauthorized if it's not the administrator or if the user is not deleting his own account
+		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+		
+		Optional<User> user = userRepository.findById(userid);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+		Optional<Workout> workout = workoutRepository.findByIdAndUser(id, user.get());
 		if(workout.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
@@ -152,7 +203,16 @@ public class WorkoutController {
 	}
 	
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Object> deleteWorkout(@PathVariable(value="id") UUID id) {
+	public ResponseEntity<Object> deleteWorkout(HttpServletRequest request,
+												@PathVariable(value="id") UUID id) {
+		
+		// Retrieve logged user ID from JWT
+		var token = request.getHeader("Authorization").replace("Bearer ", "");
+		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
+		
+		// Unauthorized if it's not the administrator or if the user is not deleting his own account
+		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+				
 		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");

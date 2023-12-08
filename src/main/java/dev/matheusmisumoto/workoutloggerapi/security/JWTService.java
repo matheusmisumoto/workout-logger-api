@@ -24,6 +24,7 @@ public class JWTService {
 	public String generateToken(User user) {
 		try {
 			Algorithm algorithm = Algorithm.HMAC256(secret);
+			
 			String token = JWT.create()
 					.withIssuer("workout-logger")
 					.withClaim("name", user.getName())

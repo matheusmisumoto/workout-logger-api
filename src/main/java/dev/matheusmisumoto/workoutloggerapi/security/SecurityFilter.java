@@ -1,7 +1,6 @@
 package dev.matheusmisumoto.workoutloggerapi.security;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +34,7 @@ public class SecurityFilter extends OncePerRequestFilter {
 
 			var user = userRepository.findById(UUID.fromString(userid));
 			
-			var authentication = new UsernamePasswordAuthenticationToken(user.get().getId().toString(), null, new ArrayList<>());
+			var authentication = new UsernamePasswordAuthenticationToken(user.get().getId().toString(), null, user.get().getAuthorities());
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 		}
 		filterChain.doFilter(request, response);

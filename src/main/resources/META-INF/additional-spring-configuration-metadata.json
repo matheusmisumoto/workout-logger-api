@@ -13,5 +13,10 @@
     "name": "github.client-secret",
     "type": "java.lang.String",
     "description": "GitHub OAuth App Client Secret"
+  },
+  {
+    "name": "api.request.origin",
+    "type": "java.lang.String",
+    "description": "URL to allow requests from"
   }
 ]}

@@ -7,8 +7,10 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,53 +20,40 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.matheusmisumoto.workoutloggerapi.dto.OAuthCodeDTO;
-import dev.matheusmisumoto.workoutloggerapi.dto.TokenDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.RegisterDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.RegisterEditDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.UserShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
-import dev.matheusmisumoto.workoutloggerapi.util.OAuthUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/v1/user")
-public class UserController {
+@RequestMapping("/v1/users")
+public class UserController implements UserDetailsService {
 	
 	@Autowired
 	UserRepository userRepository;
 	
 	@Autowired
 	JWTService jwtService;
-	
-	@Autowired
-	OAuthUtil oAuthUtil;
 
-	@PostMapping("/oauth")
-	public ResponseEntity<TokenDTO> oAuthLogin(@RequestBody @Valid OAuthCodeDTO codeDTO) {
-		
-		var oAuthUser = oAuthUtil.getOAuthData(codeDTO);
+	@PostMapping("/register")
+    public ResponseEntity<Object> register(@RequestBody @Valid RegisterDTO data){
+        if(userRepository.findByLogin(data.login()) != null) return ResponseEntity.badRequest().build();
 
-		var oauthUserId = oAuthUser.id();
-		Optional<User> checkUser = userRepository.findByOauthId(oauthUserId);
-		
-		if(checkUser.isEmpty()) {
-			var newUser = new User();
-			newUser.setOauthId(oAuthUser.id());
-			newUser.setName(oAuthUser.name());
-			newUser.setAvatarUrl(oAuthUser.avatar_url());
-			userRepository.save(newUser);
-			checkUser = userRepository.findByOauthId(oauthUserId);
-		}
-		
-		var auth = new UsernamePasswordAuthenticationToken(checkUser.get().getId().toString(), null);
-		SecurityContextHolder.getContext().setAuthentication(auth);
-		
-		var token = jwtService.generateToken(checkUser.get());
-		var response = new TokenDTO(token);
+        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+        User newUser = new User();
+        newUser.setLogin(data.login());
+        newUser.setName(data.name());
+        newUser.setPassword(encryptedPassword);
+        newUser.setRole(data.role());
 
-		return ResponseEntity.status(HttpStatus.OK).body(response);
-	}
+        userRepository.save(newUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+    }
 	
 	@GetMapping
 	public ResponseEntity<List<User>> getAllUsers(){
@@ -91,17 +80,41 @@ public class UserController {
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<Object> editUser(@PathVariable(value="id") UUID id,
-										   @RequestBody User user){
+	public ResponseEntity<Object> editUser(HttpServletRequest request,
+										   @PathVariable(value="id") UUID id,
+										   @RequestBody RegisterEditDTO user){
+		
+		// Retrieve logged user ID from JWT
+		var token = request.getHeader("Authorization").replace("Bearer ", "");
+		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
+
+		// Unauthorized if it's not the administrator or if the user is not editing his own account
+		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+		
 		Optional<User> userData = userRepository.findById(id);
 		if(userData.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(userRepository.save(user));
+		var getUserData = userData.get();
+		getUserData.setName(user.name());
+		if(user.password() != null && !user.password().isEmpty()) {
+			getUserData.setPassword(new BCryptPasswordEncoder().encode(user.password()));
+		} 
+		return ResponseEntity.status(HttpStatus.OK).body(userRepository.save(getUserData));
+	
 	}
 	
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Object> removeUser(@PathVariable(value="id") UUID id){
+	public ResponseEntity<Object> removeUser(HttpServletRequest request,
+											 @PathVariable(value="id") UUID id){
+
+		// Retrieve logged user ID from JWT
+		var token = request.getHeader("Authorization").replace("Bearer ", "");
+		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
+		
+		// Unauthorized if it's not the administrator or if the user is not deleting his own account
+		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+
 		Optional<User> userData = userRepository.findById(id);
 		if(userData.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -110,4 +123,8 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.OK).body("User deleted");	
 	}
 
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByLogin(username);
+    }
 }
