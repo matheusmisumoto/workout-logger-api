@@ -1,5 +1,7 @@
 package dev.matheusmisumoto.workoutloggerapi.controller;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,7 +51,7 @@ public class UserController implements UserDetailsService {
         newUser.setName(data.name());
         newUser.setPassword(encryptedPassword);
         newUser.setRole(data.role());
-
+        newUser.setJoinedAt(LocalDateTime.now(Clock.systemUTC()));
         userRepository.save(newUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
@@ -74,6 +76,7 @@ public class UserController implements UserDetailsService {
 									   userData.getLogin(),
 									   userData.getOauthId(),
 									   userData.getAvatarUrl(),
+									   userData.getJoinedAt(),
 									   totalWorkouts,
 									   totalLifted);
 		return ResponseEntity.status(HttpStatus.OK).body(response);

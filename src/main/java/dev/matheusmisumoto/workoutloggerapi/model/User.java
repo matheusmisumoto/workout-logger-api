@@ -1,6 +1,7 @@
 package dev.matheusmisumoto.workoutloggerapi.model;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +9,8 @@ import java.util.UUID;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import dev.matheusmisumoto.workoutloggerapi.type.OAuthProviderType;
 import dev.matheusmisumoto.workoutloggerapi.type.UserRoleType;
@@ -43,6 +46,9 @@ public class User implements Serializable, UserDetails {
 	
 	@Enumerated(EnumType.STRING)
 	private UserRoleType role;
+	
+	@JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+	private LocalDateTime joinedAt;
 	
 	@OneToMany(mappedBy="user", cascade=CascadeType.ALL, orphanRemoval=true)
 	private List<Workout> workout;
@@ -102,13 +108,21 @@ public class User implements Serializable, UserDetails {
 	public void setRole(UserRoleType role) {
 		this.role = role;
 	}
-
+	
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		if(this.role == UserRoleType.ADMIN) return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_MEMBER"), new SimpleGrantedAuthority("ROLE_DEMO"));
 		if(this.role == UserRoleType.MEMBER) return List.of(new SimpleGrantedAuthority("ROLE_MEMBER"), new SimpleGrantedAuthority("ROLE_DEMO"));
 		else return List.of(new SimpleGrantedAuthority("ROLE_DEMO"));
 		
+	}
+
+	public LocalDateTime getJoinedAt() {
+		return joinedAt;
+	}
+
+	public void setJoinedAt(LocalDateTime joinedAt) {
+		this.joinedAt = joinedAt;
 	}
 
 	@Override

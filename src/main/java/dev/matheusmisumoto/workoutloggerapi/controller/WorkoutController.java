@@ -71,7 +71,7 @@ public class WorkoutController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(workoutMetadata);
 	}
 	
-	@GetMapping("/user/{id}")
+	@GetMapping("/user/{id}/all")
 	public ResponseEntity<Object> allUserWorkouts(@PathVariable(value="id") UUID id) {
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
@@ -165,9 +165,8 @@ public class WorkoutController {
 	}
 
 	
-	@PutMapping("/user/{userid}/{id}")
+	@PutMapping("/{id}")
 	public ResponseEntity<Object> updateWorkout(HttpServletRequest request,
-												@PathVariable(value="userid") UUID userid,
 												@PathVariable(value="id") UUID id,
 											    @RequestBody WorkoutRecordDTO workoutRecordDTO){
 		
@@ -175,20 +174,17 @@ public class WorkoutController {
 		var token = request.getHeader("Authorization").replace("Bearer ", "");
 		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
 		
-		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-		
-		Optional<User> user = userRepository.findById(userid);
-		if(user.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-		}
-		Optional<Workout> workout = workoutRepository.findByIdAndUser(id, user.get());
+		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
-		
+
 		// Prepare metadata to be updated
 		var workoutData = workout.get();
+
+		// Unauthorized if it's not the administrator or if the user is not deleting his own account
+		if(!loggedUserId.equals(workoutData.getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+
 		workoutData.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		BeanUtils.copyProperties(workoutRecordDTO, workoutData);
 		

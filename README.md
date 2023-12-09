@@ -30,13 +30,13 @@ Project under development.
 - `DELETE /v1/exercises/{id}`: Remove an exercise (admin only)
 
 ### Workout
-- `GET /v1/workouts/user/{userid}`: List all workouts from a user
+- `GET /v1/workouts/user/{userid}/all`: List all workouts from a user
 - `GET /v1/workouts/user/{userid}/latest`: List the 10 latest workouts from a user
 - `GET /v1/workouts/user/{userid}/{id}`: Retrieve all details from an workout
 - `GET /v1/workouts/user/{userid}/exercise/{exerciseid}`: Get latest user stats from an exercise
 - `POST /v1/workouts`: Add workout log
-- `PUT /v1/workouts/user/{userid}/{id}`: Edit workout log, including metadata and list of exercises and sets (admin and self profile only)
-- `DELETE /v1/workout/{id}`: Remove workout log (admin and self profile only)
+- `PUT /v1/workouts/{id}`: Edit workout log, including metadata and list of exercises and sets (admin and self profile only)
+- `DELETE /v1/workouts/{id}`: Remove workout log (admin and self profile only)
 
 ### Users
 - `GET /v1/users/register`: Add a new user
