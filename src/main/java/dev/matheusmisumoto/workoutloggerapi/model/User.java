@@ -1,6 +1,5 @@
 package dev.matheusmisumoto.workoutloggerapi.model;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -26,7 +25,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
-public class User implements Serializable, UserDetails {
+public class User implements UserDetails {
 
 	private static final long serialVersionUID = 1L;
 	

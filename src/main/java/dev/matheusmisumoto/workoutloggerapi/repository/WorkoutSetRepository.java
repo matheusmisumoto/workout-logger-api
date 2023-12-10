@@ -17,18 +17,18 @@ import jakarta.transaction.Transactional;
 @Repository
 public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
 	
-	@Query("SELECT DISTINCT s.exercise FROM WorkoutSet s WHERE s.workout=?1 ORDER BY s.exerciseOrder ASC")
+	@Query("SELECT DISTINCT s.exercise FROM WorkoutSet s WHERE s.workout = ?1 ORDER BY s.exerciseOrder ASC")
 	List<Exercise> findExercisesFromWorkout(Workout workout);
 	
 	List<WorkoutSet> findByWorkoutAndExerciseOrderBySetOrderAsc(Workout workout, Exercise exercise);
 	
-	@Query("SELECT SUM(s.weight * s.reps) FROM WorkoutSet s WHERE s.workout=?1")
+	@Query("SELECT SUM(s.weight * s.reps) FROM WorkoutSet s WHERE s.workout = ?1")
 	Double calculateTotalWeightLifted(Workout workout);
 	
-	@Query("SELECT COUNT(DISTINCT s.exercise) FROM WorkoutSet s WHERE s.workout=?1")
+	@Query("SELECT COUNT(DISTINCT s.exercise) FROM WorkoutSet s WHERE s.workout = ?1")
 	int calculateTotalExercises(Workout workout);
 	
-	@Query(value = "SELECT DISTINCT e.target FROM exercises e INNER JOIN workouts_sets s ON s.exercise_id = e.id AND s.workout_id=?1", nativeQuery = true)
+	@Query(value = "SELECT DISTINCT e.target FROM exercises e INNER JOIN workouts_sets s ON s.exercise_id = e.id AND s.workout_id = ?1", nativeQuery = true)
 	List<ExerciseTargetType> listTargetMuscles(UUID workoutId);
 	
 	@Transactional
