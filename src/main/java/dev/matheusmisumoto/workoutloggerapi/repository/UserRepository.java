@@ -17,7 +17,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	int totalWorkouts(UUID userId);
 	
 	@Query(value = "SELECT SUM(s.weight * s.reps) FROM workoutlogger.workouts_sets s INNER JOIN workoutlogger.workouts w ON w.id = s.workout_id WHERE w.user_id = ?1 GROUP BY w.user_id", nativeQuery = true)
-	int calculateUserTotalWeightLifted(UUID userId);
+	Double calculateUserTotalWeightLifted(UUID userId);
 	
 	UserDetails findByLogin(String login);
 }

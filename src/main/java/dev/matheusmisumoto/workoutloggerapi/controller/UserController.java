@@ -69,7 +69,11 @@ public class UserController implements UserDetailsService {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
 		}
 		var userData = user.get();
+		var totalLiftedRounded = 0;
 		var totalLifted = userRepository.calculateUserTotalWeightLifted(userData.getId());
+		if(totalLifted != null) {
+			totalLiftedRounded = (int) Math.round(totalLifted);
+		}
 		var totalWorkouts = userRepository.totalWorkouts(userData.getId());
 		var response = new UserShowDTO(userData.getId(),
 									   userData.getName(),
@@ -78,7 +82,7 @@ public class UserController implements UserDetailsService {
 									   userData.getAvatarUrl(),
 									   userData.getJoinedAt(),
 									   totalWorkouts,
-									   totalLifted);
+									   totalLiftedRounded);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 	

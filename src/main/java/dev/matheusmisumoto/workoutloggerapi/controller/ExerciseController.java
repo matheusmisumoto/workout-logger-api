@@ -88,8 +88,12 @@ public class ExerciseController {
 		if(exercise.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
 		}
-		exerciseRepository.delete(exercise.get());
-		return ResponseEntity.status(HttpStatus.OK).body("Exercise deleted");
+		try {
+			exerciseRepository.delete(exercise.get());
+			return ResponseEntity.status(HttpStatus.OK).body("Exercise deleted");	
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Exercise cannot be deleted while in use");
+		}
 	}
 	
 	@GetMapping("/muscle")

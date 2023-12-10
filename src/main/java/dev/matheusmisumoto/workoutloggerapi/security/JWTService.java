@@ -26,7 +26,7 @@ public class JWTService {
 			Algorithm algorithm = Algorithm.HMAC256(secret);
 						
 			String token = JWT.create()
-					.withIssuer("FITLogr")
+					.withIssuer("FitLogr")
 					.withClaim("name", user.getName())
 					.withClaim("picture", user.getAvatarUrl())
 					.withClaim("roles", user.getAuthorities().toArray()[0].toString())
@@ -46,7 +46,7 @@ public class JWTService {
 		try {
 			Algorithm algorithm = Algorithm.HMAC256(secret);
 			return JWT.require(algorithm)
-					.withIssuer("FITLogr")
+					.withIssuer("FitLogr")
 					.build()
 					.verify(token)
 					.getSubject();
