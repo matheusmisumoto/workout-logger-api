@@ -13,10 +13,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	
 	Optional<User> findByOauthId(int oauthId);
 	
-	@Query(value = "SELECT COUNT(*) FROM workoutlogger.workouts w INNER JOIN workoutlogger.users u ON w.user_id = u.id WHERE w.user_id = ?1", nativeQuery = true)
+	@Query(value = "SELECT COUNT(*) FROM workouts w INNER JOIN users u ON w.user_id = u.id WHERE w.user_id = ?1", nativeQuery = true)
 	int totalWorkouts(UUID userId);
 	
-	@Query(value = "SELECT SUM(s.weight * s.reps) FROM workoutlogger.workouts_sets s INNER JOIN workoutlogger.workouts w ON w.id = s.workout_id WHERE w.user_id = ?1 GROUP BY w.user_id", nativeQuery = true)
+	@Query(value = "SELECT SUM(s.weight * s.reps) FROM workouts_sets s INNER JOIN workouts w ON w.id = s.workout_id WHERE w.user_id = ?1 GROUP BY w.user_id", nativeQuery = true)
 	Double calculateUserTotalWeightLifted(UUID userId);
 	
 	UserDetails findByLogin(String login);
