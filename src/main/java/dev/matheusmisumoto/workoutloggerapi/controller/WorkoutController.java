@@ -56,12 +56,17 @@ public class WorkoutController {
 	JWTService jwtService;
 	
 	@PostMapping
-	public ResponseEntity<Object> saveWorkout(@RequestBody WorkoutRecordDTO workoutRecordDTO) {
+	public ResponseEntity<Object> saveWorkout(HttpServletRequest request,
+											  @RequestBody WorkoutRecordDTO workoutRecordDTO) {
+		// Retrieve logged user ID from JWT
+		var token = request.getHeader("Authorization").replace("Bearer ", "");
+		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
+		
 		// Save metadata
 		var workout = new Workout();
 		workout.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		workout.setDate(LocalDateTime.now(Clock.systemUTC()));
-		workout.setUser(userRepository.findById(workoutRecordDTO.user()).get());
+		workout.setUser(userRepository.findById(loggedUserId).get());
 		BeanUtils.copyProperties(workoutRecordDTO, workout);
 		var workoutMetadata = workoutRepository.save(workout);
 		
@@ -206,13 +211,14 @@ public class WorkoutController {
 		var token = request.getHeader("Authorization").replace("Bearer ", "");
 		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
 		
-		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-				
 		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
 		}
+
+		// Unauthorized if it's not the administrator or if the user is not deleting his own account
+		if(!loggedUserId.equals(workout.get().getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+				
 		workoutRepository.delete(workout.get());
 		return ResponseEntity.status(HttpStatus.OK).body("Workout deleted");
 	}
