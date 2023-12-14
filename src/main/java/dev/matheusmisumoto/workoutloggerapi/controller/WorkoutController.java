@@ -1,7 +1,6 @@
 package dev.matheusmisumoto.workoutloggerapi.controller;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,7 +64,7 @@ public class WorkoutController {
 		// Save metadata
 		var workout = new Workout();
 		workout.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
-		workout.setDate(LocalDateTime.now(Clock.systemUTC()));
+		workout.setDate(OffsetDateTime.now());
 		workout.setUser(userRepository.findById(loggedUserId).get());
 		BeanUtils.copyProperties(workoutRecordDTO, workout);
 		var workoutMetadata = workoutRepository.save(workout);

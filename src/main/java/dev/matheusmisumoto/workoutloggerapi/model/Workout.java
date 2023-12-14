@@ -1,7 +1,7 @@
 package dev.matheusmisumoto.workoutloggerapi.model;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +33,7 @@ public class Workout implements Serializable {
 	private UUID id;
 
 	@JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
-	private LocalDateTime date;
+	private OffsetDateTime date;
 	private String name;
 	private String comment;
 	private int duration;
@@ -54,10 +54,10 @@ public class Workout implements Serializable {
 	public void setId(UUID id) {
 		this.id = id;
 	}
-	public LocalDateTime getDate() {
+	public OffsetDateTime getDate() {
 		return date;
 	}
-	public void setDate(LocalDateTime date) {
+	public void setDate(OffsetDateTime date) {
 		this.date = date;
 	}
 	public String getName() {
