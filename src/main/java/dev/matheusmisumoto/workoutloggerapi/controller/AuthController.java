@@ -55,6 +55,7 @@ public class AuthController {
 			newUser.setOauthId(oAuthUser.id());
 			newUser.setName(oAuthUser.name());
 			newUser.setAvatarUrl(oAuthUser.avatar_url());
+			newUser.setLogin(oAuthUser.login());
 			newUser.setOauthProvider(OAuthProviderType.GITHUB);
 			newUser.setRole(UserRoleType.MEMBER);
 			newUser.setJoinedAt(LocalDateTime.now(Clock.systemUTC()));
