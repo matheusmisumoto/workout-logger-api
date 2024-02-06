@@ -3,6 +3,8 @@ package dev.matheusmisumoto.workoutloggerapi.dto;
 import java.util.List;
 import java.util.UUID;
 
-public record WorkoutExerciseRecordDTO(UUID id, List<WorkoutSetRecordDTO> sets) {
+import jakarta.validation.constraints.NotEmpty;
+
+public record WorkoutExerciseRecordDTO(UUID id, @NotEmpty List<WorkoutSetRecordDTO> sets) {
 
 }

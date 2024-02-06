@@ -39,17 +39,17 @@ public class WorkoutSet implements Serializable {
 	private int exerciseOrder;
 	
 	@Min(1)
-	@Max(10)
+	@Max(50)
 	private int setOrder;
 	
 	@Enumerated(EnumType.STRING)
 	private WorkoutSetType type;
 	
-	@Max(1000)
+	@Max(999)
 	private double weight;
 	
 	@Min(1)
-	@Max(100)
+	@Max(99)
 	private int reps;
 
 	public UUID getId() {
