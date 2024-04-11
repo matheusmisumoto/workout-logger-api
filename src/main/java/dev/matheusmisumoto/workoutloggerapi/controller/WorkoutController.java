@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsDTO;
@@ -34,6 +37,8 @@ import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.util.WorkoutUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import net.minidev.json.JSONObject;
+
 
 @RestController
 @RequestMapping("/v1/workouts")
@@ -92,6 +97,46 @@ public class WorkoutController {
 
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
+	
+	@GetMapping("/user/{id}/history")
+	public ResponseEntity<Object> userWorkoutHistory(@PathVariable(value="id") UUID id,
+													 @RequestParam(required = false) String page) {
+		Optional<User> user = userRepository.findById(id);
+		if(user.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+		
+		// Set defaults
+		int resultsPerPage = 1;
+		int pageNumber = 1;
+		
+		// Retrieve total number of pages to return on JSON 
+		// to avoid call other routes and do the math on front-end
+		int totalPages = (int) Math.ceil(workoutRepository.countByUser(user.get()) / resultsPerPage);
+		
+		// Check the page parameter
+		if(page != null && !page.isEmpty() && Integer.parseInt(page) > 0) { 
+			pageNumber = Integer.parseInt(page) - 1; 
+		}
+
+		PageRequest pagination = PageRequest.of(pageNumber, resultsPerPage, Sort.by("date").descending());
+		var allWorkouts = workoutRepository.findAllByUser(user.get(), pagination);
+		
+		var responseBuilder = new WorkoutUtil();
+
+		List<Object> response = allWorkouts.stream()
+				.map(workout -> {
+					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
+				}).collect(Collectors.toList());
+		
+		// Wraps the list of workouts on a new JSON containing the page information
+		JSONObject jsonBuilder = new JSONObject();
+		jsonBuilder.put("currentPage", pageNumber + 1);
+		jsonBuilder.put("totalPages", totalPages);
+		jsonBuilder.put("workouts", response);
+
+		return ResponseEntity.status(HttpStatus.OK).body(jsonBuilder);
+	}
 
 	@GetMapping("/user/{id}/last")
 	public ResponseEntity<Object> latestUserWorkouts(@PathVariable(value="id") UUID id) {
@@ -107,7 +152,7 @@ public class WorkoutController {
 				.map(workout -> {
 					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
 				}).collect(Collectors.toList());
-
+		
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}	
 	
