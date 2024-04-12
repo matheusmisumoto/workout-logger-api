@@ -1,7 +1,10 @@
 package dev.matheusmisumoto.workoutloggerapi.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+
+import org.springframework.hateoas.Link;
 
 public record UserShowDTO(UUID id,
 						  String name,
@@ -10,6 +13,7 @@ public record UserShowDTO(UUID id,
 						  String avatarUrl,
 						  LocalDateTime joinedAt,
 						  int totalWorkouts,
-						  int totalLifted) {
+						  int totalLifted,
+						  List<Link> links) {
 
 }

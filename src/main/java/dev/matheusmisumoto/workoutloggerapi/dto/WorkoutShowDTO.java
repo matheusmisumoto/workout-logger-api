@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.hateoas.Link;
+
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 
 public record WorkoutShowDTO(UUID id, 
@@ -14,6 +16,7 @@ public record WorkoutShowDTO(UUID id,
 							 int duration, 
 							 int totalLifted,
 							 WorkoutStatusType status,
-							 List<WorkoutExerciseShowDTO> exercises) {
+							 List<WorkoutExerciseShowDTO> exercises,
+							 List<Link> links) {
 
 }

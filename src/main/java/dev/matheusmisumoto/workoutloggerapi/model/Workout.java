@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.hateoas.RepresentationModel;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -24,7 +26,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name="workouts")
-public class Workout implements Serializable {
+public class Workout extends RepresentationModel<Workout> implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	

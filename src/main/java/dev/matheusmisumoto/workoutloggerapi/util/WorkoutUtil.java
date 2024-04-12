@@ -1,11 +1,18 @@
 package dev.matheusmisumoto.workoutloggerapi.util;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.hateoas.Link;
 
+import dev.matheusmisumoto.workoutloggerapi.controller.UserController;
+import dev.matheusmisumoto.workoutloggerapi.controller.WorkoutController;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutExerciseShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
@@ -84,7 +91,14 @@ public class WorkoutUtil {
 							);
 					return exerciseDTO;
 					}
-				).collect(Collectors.toList());;
+				).collect(Collectors.toList());
+				
+		List<Link> links = new ArrayList<Link>();
+		links.add(linkTo(methodOn(WorkoutController.class).getWorkout(workoutData.getId(), workoutData.getUser().getId())).withSelfRel());
+		links.add(linkTo(methodOn(WorkoutController.class).latestUserWorkouts(workoutData.getUser().getId())).withRel("latestWorkouts"));
+		links.add(linkTo(methodOn(WorkoutController.class).userWorkoutHistory(workoutData.getUser().getId(), null)).withRel("workoutHistory"));
+		links.add(linkTo(methodOn(UserController.class).getUser(workoutData.getUser().getId())).withRel("userProfile"));
+		
 		
 		// Attach the list of exercises on the workout that will be returned as JSON
 		return new WorkoutShowDTO(
@@ -96,7 +110,8 @@ public class WorkoutUtil {
 					workoutData.getDuration(),
 					totalLiftedRounded,
 					workoutData.getStatus(),
-					exercises
+					exercises,
+					links
 				);
 	}
 	
@@ -116,6 +131,8 @@ public class WorkoutUtil {
 												return muscle.getDescription();
 											}).collect(Collectors.toList());
 		
+		List<Link> links = new ArrayList<Link>();
+		links.add(linkTo(methodOn(WorkoutController.class).getWorkout(workout.getId(), workout.getUser().getId())).withSelfRel());
 							
 		return new WorkoutShortShowDTO(
 					workout.getId(),
@@ -126,7 +143,8 @@ public class WorkoutUtil {
 					workout.getDuration(),
 					listTargetMuscles,
 					totalLiftedRounded,
-					totalExercises
+					totalExercises,
+					links
 				);
 	}
 }

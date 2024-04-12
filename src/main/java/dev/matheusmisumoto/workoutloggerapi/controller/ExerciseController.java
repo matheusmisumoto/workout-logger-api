@@ -64,7 +64,8 @@ public class ExerciseController {
 		if(exercise.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
 		}
-		exercise.get().add(linkTo(methodOn(ExerciseController.class).getAllExercises()).withRel("Exercises List"));
+		exercise.get().add(linkTo(methodOn(ExerciseController.class).getExercise(id)).withSelfRel());
+		exercise.get().add(linkTo(methodOn(ExerciseController.class).getAllExercises()).withRel("exerciseList"));
 		return ResponseEntity.status(HttpStatus.OK).body(exercise);
 	}
 	

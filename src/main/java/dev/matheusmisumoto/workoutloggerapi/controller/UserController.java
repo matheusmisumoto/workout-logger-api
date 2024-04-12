@@ -1,12 +1,17 @@
 package dev.matheusmisumoto.workoutloggerapi.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -59,7 +64,13 @@ public class UserController implements UserDetailsService {
 	
 	@GetMapping
 	public ResponseEntity<List<User>> getAllUsers(){
-		return ResponseEntity.status(HttpStatus.OK).body(userRepository.findAll());
+		List<User> userList = userRepository.findAll();
+		if(!userList.isEmpty()) { 
+			 for(User user : userList) {
+				 user.add(linkTo(methodOn(UserController.class).getUser(user.getId())).withSelfRel());
+			 }
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(userList);
 	}
 	
 	@GetMapping("/{id}")
@@ -75,6 +86,13 @@ public class UserController implements UserDetailsService {
 			totalLiftedRounded = (int) Math.round(totalLifted);
 		}
 		var totalWorkouts = userRepository.totalWorkouts(userData.getId());
+		
+		List<Link> links = new ArrayList<Link>();
+		links.add(linkTo(methodOn(UserController.class).getUser(id)).withSelfRel());
+		links.add(linkTo(methodOn(WorkoutController.class).latestUserWorkouts(id)).withRel("latestWorkouts"));
+		links.add(linkTo(methodOn(WorkoutController.class).userWorkoutHistory(id, null)).withRel("workoutHistory"));
+		links.add(linkTo(methodOn(UserController.class).getAllUsers()).withRel("userList"));
+		
 		var response = new UserShowDTO(userData.getId(),
 									   userData.getName(),
 									   userData.getLogin(),
@@ -82,7 +100,8 @@ public class UserController implements UserDetailsService {
 									   userData.getAvatarUrl(),
 									   userData.getJoinedAt(),
 									   totalWorkouts,
-									   totalLiftedRounded);
+									   totalLiftedRounded,
+									   links);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 	

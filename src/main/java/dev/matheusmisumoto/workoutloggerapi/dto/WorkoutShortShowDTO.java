@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.hateoas.Link;
+
 public record WorkoutShortShowDTO(UUID id, 
 								  UUID user,
 								  OffsetDateTime date, 
@@ -12,6 +14,7 @@ public record WorkoutShortShowDTO(UUID id,
 								  int duration,
 								  List<String> target,
 								  int totalLifted,
-								  int totalExercises) {
+								  int totalExercises,
+								  List<Link> links) {
 
 }

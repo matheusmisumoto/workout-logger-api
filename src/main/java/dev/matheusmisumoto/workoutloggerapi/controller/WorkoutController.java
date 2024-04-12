@@ -128,12 +128,13 @@ public class WorkoutController {
 				.map(workout -> {
 					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
 				}).collect(Collectors.toList());
+
 		
 		// Wraps the list of workouts on a new JSON containing the page information
 		JSONObject jsonBuilder = new JSONObject();
 		jsonBuilder.put("currentPage", pageNumber + 1);
 		jsonBuilder.put("totalPages", totalPages);
-		jsonBuilder.put("workouts", response);
+		jsonBuilder.put("workouts", response);		
 
 		return ResponseEntity.status(HttpStatus.OK).body(jsonBuilder);
 	}
