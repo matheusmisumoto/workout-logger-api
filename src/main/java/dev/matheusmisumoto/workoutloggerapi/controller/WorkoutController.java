@@ -107,19 +107,25 @@ public class WorkoutController {
 		}
 		
 		// Set defaults
-		int resultsPerPage = 1;
+		int resultsPerPage = 10;
 		int pageNumber = 1;
 		
 		// Retrieve total number of pages to return on JSON 
 		// to avoid call other routes and do the math on front-end
-		int totalPages = (int) Math.ceil(workoutRepository.countByUser(user.get()) / resultsPerPage);
+		int totalPages = (int) Math.ceil(Double.valueOf(workoutRepository.countByUser(user.get())) / Double.valueOf(resultsPerPage));
 		
 		// Check the page parameter
-		if(page != null && !page.isEmpty() && Integer.parseInt(page) > 0) { 
-			pageNumber = Integer.parseInt(page) - 1; 
+		if(page != null && !page.isEmpty()) {
+			if(Integer.parseInt(page) > 0) {
+				pageNumber = Integer.parseInt(page);
+			}
 		}
+		
+		if(pageNumber > totalPages) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}		
 
-		PageRequest pagination = PageRequest.of(pageNumber, resultsPerPage, Sort.by("date").descending());
+		PageRequest pagination = PageRequest.of(pageNumber - 1, resultsPerPage, Sort.by("date").descending());
 		var allWorkouts = workoutRepository.findAllByUser(user.get(), pagination);
 		
 		var responseBuilder = new WorkoutUtil();
@@ -132,7 +138,7 @@ public class WorkoutController {
 		
 		// Wraps the list of workouts on a new JSON containing the page information
 		JSONObject jsonBuilder = new JSONObject();
-		jsonBuilder.put("currentPage", pageNumber + 1);
+		jsonBuilder.put("currentPage", pageNumber);
 		jsonBuilder.put("totalPages", totalPages);
 		jsonBuilder.put("workouts", response);		
 

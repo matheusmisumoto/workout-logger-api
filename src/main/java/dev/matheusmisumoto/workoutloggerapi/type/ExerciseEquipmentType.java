@@ -10,7 +10,7 @@ public enum ExerciseEquipmentType {
 	CABLE("Cable"),
 	MEDICINE_BALL("Medicine Ball"),
 	DUMBBELL("Dumbbell"),
-	EZ_CURL_BAR("E-Z Curl Bar"),
+	EZ_CURL_BAR("EZ Curl Bar"),
 	EXERCISE_BALL("Exercise Ball"),
 	OTHER("Other");
 	

@@ -91,7 +91,6 @@ public class UserController implements UserDetailsService {
 		links.add(linkTo(methodOn(UserController.class).getUser(id)).withSelfRel());
 		links.add(linkTo(methodOn(WorkoutController.class).latestUserWorkouts(id)).withRel("latestWorkouts"));
 		links.add(linkTo(methodOn(WorkoutController.class).userWorkoutHistory(id, null)).withRel("workoutHistory"));
-		links.add(linkTo(methodOn(UserController.class).getAllUsers()).withRel("userList"));
 		
 		var response = new UserShowDTO(userData.getId(),
 									   userData.getName(),

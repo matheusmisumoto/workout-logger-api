@@ -65,6 +65,16 @@ public class ExerciseController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
 		}
 		exercise.get().add(linkTo(methodOn(ExerciseController.class).getExercise(id)).withSelfRel());
+		exercise.get().add(linkTo(methodOn(ExerciseController.class).getExercisesByMuscle(exercise.get()
+				.getTarget()
+				.replace(" ", "-")
+				.toLowerCase()
+		)).withRel("listByMuscle"));
+		exercise.get().add(linkTo(methodOn(ExerciseController.class).getExercisesByEquipment(exercise.get()
+				.getEquipment()
+				.replace(" ", "-")
+				.toLowerCase()
+				)).withRel("listByEquipment"));
 		exercise.get().add(linkTo(methodOn(ExerciseController.class).getAllExercises()).withRel("exerciseList"));
 		return ResponseEntity.status(HttpStatus.OK).body(exercise);
 	}
