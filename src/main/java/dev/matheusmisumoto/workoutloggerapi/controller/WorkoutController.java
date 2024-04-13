@@ -1,6 +1,10 @@
 package dev.matheusmisumoto.workoutloggerapi.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,6 +14,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,6 +26,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsWorkoutsDTO;
@@ -37,7 +45,6 @@ import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.util.WorkoutUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import net.minidev.json.JSONObject;
 
 
 @RestController
@@ -136,11 +143,18 @@ public class WorkoutController {
 				}).collect(Collectors.toList());
 
 		
+		List<Link> links = new ArrayList<Link>();
+		links.add(linkTo(methodOn(UserController.class).getUser(user.get().getId())).withRel("userProfile"));
+		
+		
 		// Wraps the list of workouts on a new JSON containing the page information
-		JSONObject jsonBuilder = new JSONObject();
+		ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode jsonBuilder = objectMapper.createObjectNode();
 		jsonBuilder.put("currentPage", pageNumber);
 		jsonBuilder.put("totalPages", totalPages);
-		jsonBuilder.put("workouts", response);		
+		jsonBuilder.putPOJO("workouts", response);
+		jsonBuilder.putPOJO("links", links);
+
 
 		return ResponseEntity.status(HttpStatus.OK).body(jsonBuilder);
 	}

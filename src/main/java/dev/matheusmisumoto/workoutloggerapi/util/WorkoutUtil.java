@@ -94,7 +94,7 @@ public class WorkoutUtil {
 				).collect(Collectors.toList());
 				
 		List<Link> links = new ArrayList<Link>();
-		links.add(linkTo(methodOn(WorkoutController.class).getWorkout(workoutData.getId(), workoutData.getUser().getId())).withSelfRel());
+		links.add(linkTo(methodOn(WorkoutController.class).getWorkout(workoutData.getUser().getId(), workoutData.getId())).withSelfRel());
 		links.add(linkTo(methodOn(WorkoutController.class).latestUserWorkouts(workoutData.getUser().getId())).withRel("latestWorkouts"));
 		links.add(linkTo(methodOn(WorkoutController.class).userWorkoutHistory(workoutData.getUser().getId(), null)).withRel("workoutHistory"));
 		links.add(linkTo(methodOn(UserController.class).getUser(workoutData.getUser().getId())).withRel("userProfile"));
@@ -132,7 +132,7 @@ public class WorkoutUtil {
 											}).collect(Collectors.toList());
 		
 		List<Link> links = new ArrayList<Link>();
-		links.add(linkTo(methodOn(WorkoutController.class).getWorkout(workout.getId(), workout.getUser().getId())).withSelfRel());
+		links.add(linkTo(methodOn(WorkoutController.class).getWorkout(workout.getUser().getId(), workout.getId())).withSelfRel());
 							
 		return new WorkoutShortShowDTO(
 					workout.getId(),
