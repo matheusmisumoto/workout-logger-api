@@ -20,5 +20,10 @@ public class WorkoutLoggerApiApplication {
 	public ResponseEntity<String> indexResponse() {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	}
+	
+	@GetMapping("/hello")
+	public ResponseEntity<String> wakeUp() {
+		return ResponseEntity.status(HttpStatus.OK).body("I am up");
+	}
 
 }
