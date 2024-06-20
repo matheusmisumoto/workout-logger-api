@@ -11,7 +11,7 @@ RUN ./gradlew build -x test
 FROM amazoncorretto:17-alpine
 
 WORKDIR /app
-COPY --from=build /home/gradle/src/build/libs/workout-logger-api-1.3.0.jar app.jar
+COPY --from=build /home/gradle/src/build/libs/workout-logger-api-1.4.0.jar app.jar
 
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]
