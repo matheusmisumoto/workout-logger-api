@@ -5,7 +5,8 @@ public enum WorkoutSetType {
 	DROP,
 	NEGATIVE,
 	REST_PAUSE,
-	DEAD_STOP;
+	DEAD_STOP,
+	WARM_UP;
 	
 	public static WorkoutSetType valueOfDescription(String description) {
 		for (WorkoutSetType setType : WorkoutSetType.values()) {
