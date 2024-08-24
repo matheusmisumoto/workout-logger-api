@@ -24,10 +24,13 @@ import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
 import dev.matheusmisumoto.workoutloggerapi.type.OAuthProviderType;
 import dev.matheusmisumoto.workoutloggerapi.type.UserRoleType;
 import dev.matheusmisumoto.workoutloggerapi.util.OAuthUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication", description = "User authentication endpoints")
 public class AuthController {
 	
 	@Autowired
@@ -43,6 +46,7 @@ public class AuthController {
 	OAuthUtil oAuthUtil;
 	
 	@PostMapping("/oauth")
+	@Operation(summary = "Login with OAuth2")
 	public ResponseEntity<TokenDTO> oAuthLogin(@RequestBody @Valid OAuthCodeDTO codeDTO) {
 		
 		var oAuthUser = oAuthUtil.getOAuthData(codeDTO);
@@ -74,7 +78,8 @@ public class AuthController {
 	
 	
 	@PostMapping("/login")
-	public ResponseEntity<Object> usernamePasswordLogin(@RequestBody @Valid LoginDTO data){
+	@Operation(summary = "Login with username and password")
+	public ResponseEntity<TokenDTO> usernamePasswordLogin(@RequestBody @Valid LoginDTO data){
 		var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
        
     	var auth = authenticationManager.authenticate(usernamePassword);			
