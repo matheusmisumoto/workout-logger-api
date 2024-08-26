@@ -5,7 +5,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import dev.matheusmisumoto.workoutloggerapi.dto.OAuthCodeDTO;
@@ -37,13 +36,8 @@ public class OAuthUtil {
 	    var headers = new HttpHeaders();
 	    headers.set("Authorization", "Bearer " + accessToken);
 
-	    try {
-	    	HttpEntity<String> requestEntity = new HttpEntity<>(headers);
-		    var response = new RestTemplate().exchange(userUrl, HttpMethod.GET, requestEntity, OAuthUserDTO.class);
-		    return response.getBody();
-		} catch (RestClientException e) {
-			throw new RuntimeException("Unauthorized access to GitHub: ", e);
-		}
-	 
+	    HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+		var response = new RestTemplate().exchange(userUrl, HttpMethod.GET, requestEntity, OAuthUserDTO.class);
+		return response.getBody();	 
 	}
 }
