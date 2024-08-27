@@ -62,8 +62,8 @@ public class AuthController {
         @ApiResponse(
         		responseCode = "401", 
         		description = "Unauthorized", 
-        		content = @Content(schema = @Schema(name = "message"))
-       )
+        		content = @Content
+        )
 	})
 	public ResponseEntity<TokenDTO> oAuthLogin(@RequestBody @Valid OAuthCodeDTO codeDTO) {
 		try {
@@ -95,9 +95,6 @@ public class AuthController {
 		} catch (HttpClientErrorException e) {
 	        // Handle authentication failures
 	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-	    } catch (Exception e) {
-	        // Handle other exceptions
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	    }
 	}
 	
@@ -113,7 +110,7 @@ public class AuthController {
         @ApiResponse(
         		responseCode = "401", 
         		description = "Unauthorized", 
-        		content = @Content(schema = @Schema(name = "message"))
+        		content = @Content
        )
 	})
 	public ResponseEntity<TokenDTO> usernamePasswordLogin(@RequestBody @Valid LoginDTO data){
@@ -127,9 +124,6 @@ public class AuthController {
 		} catch (AuthenticationException e) {
 	        // Handle authentication failures
 	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-	    } catch (Exception e) {
-	        // Handle other exceptions
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	    }
 	}
 
