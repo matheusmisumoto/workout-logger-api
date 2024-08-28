@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -28,16 +29,35 @@ import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
 import dev.matheusmisumoto.workoutloggerapi.repository.ExerciseRepository;
 import dev.matheusmisumoto.workoutloggerapi.type.ExerciseEquipmentType;
 import dev.matheusmisumoto.workoutloggerapi.type.ExerciseTargetType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/v1/exercises")
+@Tag(name = "Exercise", description = "Exercise library management endpoints")
 public class ExerciseController {
 	
 	@Autowired
 	ExerciseRepository exerciseRepository;
 	
 	@PostMapping
+	@Operation(summary = "Register a new exercise")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "201", 
+        		description = "Exercise created"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
 	public ResponseEntity<Exercise> saveExercise(@RequestBody @Valid ExerciseRecordDTO exerciseRecordDTO) {
 		var exercise = new Exercise();
 		exercise.setTarget(ExerciseTargetType.valueOfDescription(exerciseRecordDTO.target()));
@@ -47,6 +67,18 @@ public class ExerciseController {
 	}
 	
 	@GetMapping
+	@Operation(summary = "Retrieve a list of all exercises")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Show all exercises"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
 	public ResponseEntity<List<Exercise>> getAllExercises(){
 		List<Exercise> exerciseList = exerciseRepository.findAllByOrderByNameAsc();
 		if(!exerciseList.isEmpty()) {
@@ -59,10 +91,27 @@ public class ExerciseController {
 	}
 	
 	@GetMapping("/{id}")
-	public ResponseEntity<Object> getExercise(@PathVariable(value="id") UUID id){
+	@Operation(summary = "Retrieve exercise information")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Show exercise information"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "Not Found",
+        		content = @Content
+        )
+	})	
+	public ResponseEntity<Optional<Exercise>> getExercise(@PathVariable(value="id") UUID id){
 		Optional<Exercise> exercise = exerciseRepository.findById(id);
 		if(exercise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found");
 		}
 		exercise.get().add(linkTo(methodOn(ExerciseController.class).getExercise(id)).withSelfRel());
 		exercise.get().add(linkTo(methodOn(ExerciseController.class).getExercisesByMuscle(exercise.get()
@@ -80,11 +129,28 @@ public class ExerciseController {
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<Object> updateExercise(@PathVariable(value="id") UUID id, 
+	@Operation(summary = "Update exercise information")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Show updated exercise information"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "Not Found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<Exercise> updateExercise(@PathVariable(value="id") UUID id, 
 												 @RequestBody @Valid ExerciseRecordDTO exerciseRecordDTO) {
 		Optional<Exercise> exercise = exerciseRepository.findById(id);
 		if(exercise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found");
 		}
 		var getExerciseData = exercise.get();
 		getExerciseData.setTarget(ExerciseTargetType.valueOfDescription(exerciseRecordDTO.target()));
@@ -94,10 +160,33 @@ public class ExerciseController {
 	}
 	
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Object> deleteExercise(@PathVariable(value="id") UUID id){
+	@Operation(summary = "Remove exercise")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Exercise removed",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "400", 
+        		description = "Bad Request",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "Not Found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<String> deleteExercise(@PathVariable(value="id") UUID id){
 		Optional<Exercise> exercise = exerciseRepository.findById(id);
 		if(exercise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found");
 		}
 		try {
 			exerciseRepository.delete(exercise.get());
@@ -108,7 +197,20 @@ public class ExerciseController {
 	}
 	
 	@GetMapping("/muscle")
-	public ResponseEntity<Object> getMuscles(){
+	@Operation(summary = "List all muscles")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "List of all muscles",
+        		content = @Content(schema = @Schema(implementation = ObjectNode.class))
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<ObjectNode> getMuscles(){
 		ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode json = objectMapper.createObjectNode();
         
@@ -120,7 +222,19 @@ public class ExerciseController {
 	}
 	
 	@GetMapping("/muscle/{muscle}")
-	public ResponseEntity<Object> getExercisesByMuscle(@PathVariable(value="muscle") String target){
+	@Operation(summary = "List exercises that target a given muscle")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Exercises targeting a given muscle"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<List<Exercise>> getExercisesByMuscle(@PathVariable(value="muscle") String target){
 		target = target.replace("-", " ");
 		List<Exercise> exerciseList = exerciseRepository.findByTarget(ExerciseTargetType.valueOfDescription(target));
 		if(!exerciseList.isEmpty()) {
@@ -133,7 +247,20 @@ public class ExerciseController {
 	}
 	
 	@GetMapping("/equipment")
-	public ResponseEntity<Object> getEquipments(){
+	@Operation(summary = "List all equipments")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "List of all types of equipments",
+        		content = @Content(schema = @Schema(implementation = ObjectNode.class))
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<ObjectNode> getEquipments(){
 		ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode json = objectMapper.createObjectNode();
         
@@ -145,7 +272,19 @@ public class ExerciseController {
 	}
 
 	@GetMapping("/equipment/{equipment}")
-	public ResponseEntity<Object> getExercisesByEquipment(@PathVariable(value="equipment") String equipment){
+	@Operation(summary = "List all exercises that uses a given equipment")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Exercises using a given equipment"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<List<Exercise>> getExercisesByEquipment(@PathVariable(value="equipment") String equipment){
 		equipment = equipment.replace("-", " ");
 		List<Exercise> exerciseList = exerciseRepository.findByEquipment(ExerciseEquipmentType.valueOfDescription(equipment));
 		if(!exerciseList.isEmpty()) {
