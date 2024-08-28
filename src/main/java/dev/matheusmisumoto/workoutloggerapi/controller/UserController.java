@@ -100,25 +100,23 @@ public class UserController implements UserDetailsService {
 		List<User> users = userRepository.findAll();
 		List<UserListDTO> userList = new ArrayList<UserListDTO>();
 
-		if(!users.isEmpty()) {
-			userList = users.stream().map(
-					user -> {
-						List<Link> links = new ArrayList<Link>();
-						links.add(linkTo(methodOn(UserController.class).getUser(user.getId())).withSelfRel());
-						
-						UserListDTO setDTO = new UserListDTO(user.getId(),
-			 					  user.getName(),
-			 					  user.getUsername(),
-			 					  user.getOauthId(),
-			 					  user.getOauthProvider(),
-			 					  user.getAvatarUrl(),
-			 					  user.getJoinedAt(),
-			 					  user.getAuthorities(),
-			 					  links
-						);
-						return setDTO;
-					}).collect(Collectors.toList());			
-		}
+		userList = users.stream().map(
+				user -> {
+					List<Link> links = new ArrayList<Link>();
+					links.add(linkTo(methodOn(UserController.class).getUser(user.getId())).withSelfRel());
+					
+					UserListDTO setDTO = new UserListDTO(user.getId(),
+		 					  user.getName(),
+		 					  user.getUsername(),
+		 					  user.getOauthId(),
+		 					  user.getOauthProvider(),
+		 					  user.getAvatarUrl(),
+		 					  user.getJoinedAt(),
+		 					  user.getAuthorities(),
+		 					  links
+					);
+					return setDTO;
+				}).collect(Collectors.toList());			
 		return ResponseEntity.status(HttpStatus.OK).body(userList);
 	}
 	
@@ -256,7 +254,7 @@ public class UserController implements UserDetailsService {
 		return ResponseEntity.status(HttpStatus.OK).build();	
 	}
 
-    //@Override
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByLogin(username);
     }
