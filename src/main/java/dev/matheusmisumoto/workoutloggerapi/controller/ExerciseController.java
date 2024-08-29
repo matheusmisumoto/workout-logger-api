@@ -39,7 +39,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/v1/exercises")
-@Tag(name = "Exercise", description = "Exercise library management endpoints")
+@Tag(name = "Exercises", description = "Exercise library management endpoints")
 public class ExerciseController {
 	
 	@Autowired
