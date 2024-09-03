@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +35,8 @@ import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.PreviousStatsWorkoutsDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutRecordDTO;
 import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutSetShowDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShortShowDTO;
+import dev.matheusmisumoto.workoutloggerapi.dto.WorkoutShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.Workout;
 import dev.matheusmisumoto.workoutloggerapi.model.Exercise;
 import dev.matheusmisumoto.workoutloggerapi.model.User;
@@ -44,11 +47,17 @@ import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutSetRepository;
 import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.util.WorkoutUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 
 @RestController
 @RequestMapping("/v1/workouts")
+@Tag(name = "Workouts", description = "User workout log endpoints")
 public class WorkoutController {
 	
 	@Autowired
@@ -67,7 +76,19 @@ public class WorkoutController {
 	JWTService jwtService;
 	
 	@PostMapping
-	public ResponseEntity<Object> saveWorkout(HttpServletRequest request,
+	@Operation(summary = "Log a new workout")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "201", 
+        		description = "Logged workout"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<Workout> saveWorkout(HttpServletRequest request,
 											  @RequestBody WorkoutRecordDTO workoutRecordDTO) {
 		// Retrieve logged user ID from JWT
 		var token = request.getHeader("Authorization").replace("Bearer ", "");
@@ -88,16 +109,33 @@ public class WorkoutController {
 	}
 	
 	@GetMapping("/user/{id}/all")
-	public ResponseEntity<Object> allUserWorkouts(@PathVariable(value="id") UUID id) {
+	@Operation(summary = "Show all workout history from a given user")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Workout logs"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "User not found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<List<WorkoutShortShowDTO>> allUserWorkouts(@PathVariable(value="id") UUID id) {
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		
 		var allWorkouts = workoutRepository.findAllByUserOrderByDateDesc(user.get());
 		var responseBuilder = new WorkoutUtil();
 
-		List<Object> response = allWorkouts.stream()
+		List<WorkoutShortShowDTO> response = allWorkouts.stream()
 				.map(workout -> {
 					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
 				}).collect(Collectors.toList());
@@ -106,11 +144,28 @@ public class WorkoutController {
 	}
 	
 	@GetMapping("/user/{id}/history")
-	public ResponseEntity<Object> userWorkoutHistory(@PathVariable(value="id") UUID id,
+	@Operation(summary = "Show paged workout history from a given user")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Workout history"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "User not found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<ObjectNode> userWorkoutHistory(@PathVariable(value="id") UUID id,
 													 @RequestParam(required = false) String page) {
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		
 		// Set defaults
@@ -160,16 +215,32 @@ public class WorkoutController {
 	}
 
 	@GetMapping("/user/{id}/last")
-	public ResponseEntity<Object> latestUserWorkouts(@PathVariable(value="id") UUID id) {
+	@Operation(summary = "Show last 10 workouts from a given user")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Workout history"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "User not found",
+        		content = @Content
+        )
+	})	public ResponseEntity<List<WorkoutShortShowDTO>> latestUserWorkouts(@PathVariable(value="id") UUID id) {
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		
 		var allWorkouts = workoutRepository.findTop10ByUserOrderByDateDesc(user.get());
 		var responseBuilder = new WorkoutUtil();
 
-		List<Object> response = allWorkouts.stream()
+		List<WorkoutShortShowDTO> response = allWorkouts.stream()
 				.map(workout -> {
 					return responseBuilder.buildWorkoutCardJSON(workout, workoutSetRepository);
 				}).collect(Collectors.toList());
@@ -178,15 +249,32 @@ public class WorkoutController {
 	}	
 	
 	@GetMapping("/user/{userid}/{id}")
-	public ResponseEntity<Object> getWorkout(@PathVariable(value="userid") UUID userid,
+	@Operation(summary = "Show a workout log from a given user")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Workout log"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "User or workout not found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<WorkoutShowDTO> getWorkout(@PathVariable(value="userid") UUID userid,
 											 @PathVariable(value="id") UUID id) {
 		Optional<User> user = userRepository.findById(userid);
 		if(user.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		Optional<Workout> workout = workoutRepository.findByIdAndUser(id, user.get());
 		if(workout.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		
 		var response = new WorkoutUtil();
@@ -195,15 +283,32 @@ public class WorkoutController {
 	}
 	
 	@GetMapping("/user/{userid}/exercise/{exerciseid}")
-	public ResponseEntity<Object> getLastStatsFromExercise(@PathVariable(value="userid") UUID userid,
+	@Operation(summary = "Show exercise stats from user's previous workouts")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Workout logs"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "User or exercise not found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<PreviousStatsDTO> getLastStatsFromExercise(@PathVariable(value="userid") UUID userid,
 														   @PathVariable(value="exerciseid") UUID exerciseid){
 		Optional<User> user = userRepository.findById(userid);
 		if(user.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		Optional<Exercise> exercise = exerciseRepository.findById(exerciseid);
 		if(exercise.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 		
 		var getWorkouts = workoutRepository.findLatestWorkoutsWithExercise(userid, exerciseid);
@@ -236,7 +341,24 @@ public class WorkoutController {
 
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<Object> updateWorkout(HttpServletRequest request,
+	@Operation(summary = "Edit a workout from a given user")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Updated workout log"
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "Workout not found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<Workout> updateWorkout(HttpServletRequest request,
 												@PathVariable(value="id") UUID id,
 											    @RequestBody WorkoutRecordDTO workoutRecordDTO){
 		
@@ -246,14 +368,14 @@ public class WorkoutController {
 		
 		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);	
 		}
 
 		// Prepare metadata to be updated
 		var workoutData = workout.get();
 
 		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(workoutData.getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+		if(!loggedUserId.equals(workoutData.getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
 
 		workoutData.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		BeanUtils.copyProperties(workoutRecordDTO, workoutData);
@@ -269,7 +391,25 @@ public class WorkoutController {
 	}
 	
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Object> deleteWorkout(HttpServletRequest request,
+	@Operation(summary = "Delete a workout from a given user")
+	@ApiResponses({
+        @ApiResponse(
+        		responseCode = "200", 
+        		description = "Workout deleted",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "403", 
+        		description = "Forbidden",
+        		content = @Content
+        ),
+        @ApiResponse(
+        		responseCode = "404", 
+        		description = "Workout not found",
+        		content = @Content
+        )
+	})
+	public ResponseEntity<Void> deleteWorkout(HttpServletRequest request,
 												@PathVariable(value="id") UUID id) {
 		
 		// Retrieve logged user ID from JWT
@@ -278,13 +418,13 @@ public class WorkoutController {
 		
 		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Workout not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 
 		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(workout.get().getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+		if(!loggedUserId.equals(workout.get().getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
 				
 		workoutRepository.delete(workout.get());
-		return ResponseEntity.status(HttpStatus.OK).body("Workout deleted");
+		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 }
