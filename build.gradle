@@ -9,9 +9,7 @@ version = '1.4.0'
 compileJava.options.encoding = 'UTF-8'
 
 java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(17)
-  }
+	sourceCompatibility = '17'
 }
 
 repositories {
@@ -25,7 +23,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-hateoas'
 	implementation 'com.auth0:java-jwt:4.4.0'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
