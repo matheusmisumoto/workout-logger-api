@@ -45,6 +45,7 @@ import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutRepository;
 import dev.matheusmisumoto.workoutloggerapi.repository.WorkoutSetRepository;
 import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
+import dev.matheusmisumoto.workoutloggerapi.security.SecurityService;
 import dev.matheusmisumoto.workoutloggerapi.type.WorkoutStatusType;
 import dev.matheusmisumoto.workoutloggerapi.util.WorkoutUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,6 +71,9 @@ public class WorkoutController {
 	WorkoutSetRepository workoutSetRepository;
 	
 	@Autowired
+	SecurityService securityService;
+	
+	@Autowired
 	UserRepository userRepository;
 	
 	@Autowired
@@ -90,15 +94,21 @@ public class WorkoutController {
 	})
 	public ResponseEntity<Workout> saveWorkout(HttpServletRequest request,
 											  @RequestBody WorkoutRecordDTO workoutRecordDTO) {
-		// Retrieve logged user ID from JWT
-		var token = request.getHeader("Authorization").replace("Bearer ", "");
-		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
+		// Retrieve logged user ID from SecurityService
+		var loggedUserId = securityService.getLoggedUserId(request);
+		if (loggedUserId == null) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+		}
+		var user = userRepository.findById(loggedUserId);
+		if (user.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+		}
 		
 		// Save metadata
 		var workout = new Workout();
 		workout.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		workout.setDate(OffsetDateTime.now());
-		workout.setUser(userRepository.findById(loggedUserId).get());
+		workout.setUser(user.get());
 		BeanUtils.copyProperties(workoutRecordDTO, workout);
 		var workoutMetadata = workoutRepository.save(workout);
 		
@@ -127,6 +137,7 @@ public class WorkoutController {
         )
 	})
 	public ResponseEntity<List<WorkoutShortShowDTO>> allUserWorkouts(@PathVariable(value="id") UUID id) {
+		securityService.validateOwnershipOrAdmin(id, "Access denied to user's workout data");
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -163,6 +174,7 @@ public class WorkoutController {
 	})
 	public ResponseEntity<ObjectNode> userWorkoutHistory(@PathVariable(value="id") UUID id,
 													 @RequestParam(required = false) String page) {
+		securityService.validateOwnershipOrAdmin(id, "Access denied to user's workout data");
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -232,6 +244,7 @@ public class WorkoutController {
         		content = @Content
         )
 	})	public ResponseEntity<List<WorkoutShortShowDTO>> latestUserWorkouts(@PathVariable(value="id") UUID id) {
+		securityService.validateOwnershipOrAdmin(id, "Access denied to user's workout data");
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -268,6 +281,7 @@ public class WorkoutController {
 	})
 	public ResponseEntity<WorkoutShowDTO> getWorkout(@PathVariable(value="userid") UUID userid,
 											 @PathVariable(value="id") UUID id) {
+		securityService.validateOwnershipOrAdmin(userid, "Access denied to user's workout data");
 		Optional<User> user = userRepository.findById(userid);
 		if(user.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -302,6 +316,7 @@ public class WorkoutController {
 	})
 	public ResponseEntity<PreviousStatsDTO> getLastStatsFromExercise(@PathVariable(value="userid") UUID userid,
 														   @PathVariable(value="exerciseid") UUID exerciseid){
+		securityService.validateOwnershipOrAdmin(userid, "Access denied to user's workout data");
 		Optional<User> user = userRepository.findById(userid);
 		if(user.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -361,11 +376,6 @@ public class WorkoutController {
 	public ResponseEntity<Workout> updateWorkout(HttpServletRequest request,
 												@PathVariable(value="id") UUID id,
 											    @RequestBody WorkoutRecordDTO workoutRecordDTO){
-		
-		// Retrieve logged user ID from JWT
-		var token = request.getHeader("Authorization").replace("Bearer ", "");
-		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
-		
 		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);	
@@ -374,8 +384,8 @@ public class WorkoutController {
 		// Prepare metadata to be updated
 		var workoutData = workout.get();
 
-		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(workoutData.getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+		// Unauthorized if it's not the administrator or if the user is not the owner
+		securityService.validateOwnershipOrAdmin(workoutData.getUser().getId(), request, "Access denied to update workout");
 
 		workoutData.setStatus(WorkoutStatusType.valueOfDescription(workoutRecordDTO.status()));
 		BeanUtils.copyProperties(workoutRecordDTO, workoutData);
@@ -411,18 +421,13 @@ public class WorkoutController {
 	})
 	public ResponseEntity<Void> deleteWorkout(HttpServletRequest request,
 												@PathVariable(value="id") UUID id) {
-		
-		// Retrieve logged user ID from JWT
-		var token = request.getHeader("Authorization").replace("Bearer ", "");
-		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
-		
 		Optional<Workout> workout = workoutRepository.findById(id);
 		if(workout.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 
-		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(workout.get().getUser().getId()) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+		// Unauthorized if it's not the administrator or if the user is not the owner
+		securityService.validateOwnershipOrAdmin(workout.get().getUser().getId(), request, "Access denied to delete workout");
 				
 		workoutRepository.delete(workout.get());
 		return ResponseEntity.status(HttpStatus.OK).build();
