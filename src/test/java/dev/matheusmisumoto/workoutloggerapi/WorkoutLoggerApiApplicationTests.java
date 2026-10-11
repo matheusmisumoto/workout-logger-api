@@ -2,9 +2,11 @@ package dev.matheusmisumoto.workoutloggerapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
-class WorkoutLoggerApiApplicationTests {
+@TestPropertySource(locations = "classpath:application.properties")
+public class WorkoutLoggerApiApplicationTests {
 
 	@Test
 	void contextLoads() {

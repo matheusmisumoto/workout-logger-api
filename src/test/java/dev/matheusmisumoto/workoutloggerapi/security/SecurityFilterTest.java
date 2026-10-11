@@ -23,7 +23,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 
 import dev.matheusmisumoto.workoutloggerapi.model.User;
