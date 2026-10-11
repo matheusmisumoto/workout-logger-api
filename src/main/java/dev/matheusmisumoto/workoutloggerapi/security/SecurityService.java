@@ -10,6 +10,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+
 import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,7 +60,7 @@ public class SecurityService {
 					if (subject != null) {
 						return UUID.fromString(subject);
 					}
-				} catch (Exception ignored) {
+				} catch (JWTVerificationException | IllegalArgumentException ignored) {
 				}
 			}
 		}

@@ -9,6 +9,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,17 +32,25 @@ public class SecurityFilter extends OncePerRequestFilter {
 		
 		var token = this.recoverToken(request);
 		if(token != null) {
+			UUID userId = null;
 			try {
 				var userid = jwtService.validateToken(token);
 				if(userid != null && !userid.isBlank()) {
-					var user = userRepository.findById(UUID.fromString(userid));
-					if(user.isPresent()) {
-						var authentication = new UsernamePasswordAuthenticationToken(user.get(), null, user.get().getAuthorities());
-						SecurityContextHolder.getContext().setAuthentication(authentication);
-					}
+					userId = UUID.fromString(userid);
 				}
-			} catch (Exception e) {
-				// Invalid token or non-existent user, context remains unauthenticated
+			} catch (JWTVerificationException | IllegalArgumentException e) {
+				// Invalid token or malformed UUID: request remains unauthenticated
+				userId = null;
+			}
+
+			// Repository call is intentionally outside the try-catch:
+			// Database or connection errors will properly propagate rather than being masked as auth failures.
+			if(userId != null) {
+				var user = userRepository.findById(userId);
+				if(user.isPresent()) {
+					var authentication = new UsernamePasswordAuthenticationToken(user.get(), null, user.get().getAuthorities());
+					SecurityContextHolder.getContext().setAuthentication(authentication);
+				}
 			}
 		}
 		filterChain.doFilter(request, response);
