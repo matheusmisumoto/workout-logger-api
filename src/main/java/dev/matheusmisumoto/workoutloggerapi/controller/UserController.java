@@ -36,6 +36,7 @@ import dev.matheusmisumoto.workoutloggerapi.dto.UserShowDTO;
 import dev.matheusmisumoto.workoutloggerapi.model.User;
 import dev.matheusmisumoto.workoutloggerapi.repository.UserRepository;
 import dev.matheusmisumoto.workoutloggerapi.security.JWTService;
+import dev.matheusmisumoto.workoutloggerapi.security.SecurityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -55,6 +56,9 @@ public class UserController implements UserDetailsService {
 	
 	@Autowired
 	JWTService jwtService;
+
+	@Autowired
+	SecurityService securityService;
 
 	@PostMapping("/register")
 	@Operation(summary = "Register a new user")
@@ -140,6 +144,7 @@ public class UserController implements UserDetailsService {
         )
 	})
 	public ResponseEntity<UserShowDTO> getUser(@PathVariable(value="id") UUID id){
+		securityService.validateOwnershipOrAdmin(id, "Access denied to user profile data");
 		Optional<User> user = userRepository.findById(id);
 		if(user.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -191,13 +196,7 @@ public class UserController implements UserDetailsService {
 	public ResponseEntity<Void> editUser(HttpServletRequest request,
 										   @PathVariable(value="id") UUID id,
 										   @RequestBody RegisterEditDTO user){
-		
-		// Retrieve logged user ID from JWT
-		var token = request.getHeader("Authorization").replace("Bearer ", "");
-		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
-
-		// Forbidden if it's not the administrator or if the user is not editing his own account
-		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		securityService.validateOwnershipOrAdmin(id, request, "Access denied to edit user profile");
 		
 		Optional<User> userData = userRepository.findById(id);
 		if(userData.isEmpty()) {
@@ -208,7 +207,7 @@ public class UserController implements UserDetailsService {
 		getUserData.setName(user.name());
 		
 		// Update user role if the request is made by an administrator
-		if(request.isUserInRole("ROLE_ADMIN")) {
+		if(securityService.isAdmin(request)) {
 			getUserData.setRole(user.role());
 		}
 		
@@ -238,13 +237,7 @@ public class UserController implements UserDetailsService {
 	})
 	public ResponseEntity<Void> removeUser(HttpServletRequest request,
 											 @PathVariable(value="id") UUID id){
-
-		// Retrieve logged user ID from JWT
-		var token = request.getHeader("Authorization").replace("Bearer ", "");
-		var loggedUserId = UUID.fromString(jwtService.validateToken(token));
-		
-		// Unauthorized if it's not the administrator or if the user is not deleting his own account
-		if(!loggedUserId.equals(id) && !request.isUserInRole("ROLE_ADMIN")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+		securityService.validateOwnershipOrAdmin(id, request, "Access denied to remove user");
 
 		Optional<User> userData = userRepository.findById(id);
 		if(userData.isEmpty()) {
