@@ -28,7 +28,7 @@ public class OpenAPIConfig {
 
 	    Info info = new Info()
 	        .title("FitLogr API")
-	        .version("1.4.1")
+	        .version("1.4.2")
 	        .contact(contact)
 	        .description("API from FitLogr, an application project to log workout data to keep tracking of your fitness journey.")
 	        .license(gpl3License);
